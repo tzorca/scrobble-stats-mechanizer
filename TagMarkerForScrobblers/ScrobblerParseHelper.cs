@@ -1,0 +1,29 @@
+﻿using System;
+using System.IO;
+using System.Linq;
+using MyExtensions;
+using TagMarkerForScrobblers.model;
+using System.Collections.Generic;
+
+namespace TagMarkerForScrobblers
+{
+    internal class ScrobblerParseHelper
+    {
+        internal static List<ScrobbleRecord> ParseScrobblerData(string scrobblerFilePath)
+        {
+            string scrobblerData = File.ReadAllText(scrobblerFilePath);
+
+            var scrobblerDataLines = scrobblerData.SplitIntoLines();
+
+            var linesWithIdentifiableTrack = scrobblerDataLines
+                .Where(l => l.Contains("[[") && l.Contains("]]"));
+
+            List<ScrobbleRecord> scrobbleRecords = linesWithIdentifiableTrack
+                .Select(l => ScrobbleRecord.FromLine(l))
+                .ToList();
+
+
+            return scrobbleRecords;
+        }
+    }
+}
