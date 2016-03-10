@@ -25,7 +25,7 @@ namespace TagMarkerForScrobblers
                 .ToList();
 
 
-            AddScrobblerTagsToAudioFiles(audioFilePaths);
+            UpdateTags(audioFilePaths);
 
             var scrobblerData = ScrobblerParseHelper.ParseScrobblerData(Config.ScrobblerFilePath);
 
@@ -87,13 +87,14 @@ namespace TagMarkerForScrobblers
             }
         }
 
-        private static void AddScrobblerTagsToAudioFiles(List<string> filePaths)
+        private static void UpdateTags(List<string> filePaths)
         {
             foreach (var filePath in filePaths)
             {
                 try
                 {
                     AddFilenameTagMarkerIfNotAlreadyAdded(filePath);
+                    SetArtistAndTrackNameIfNotSet(filePath);
                 }
                 catch (Exception e)
                 {
@@ -126,6 +127,117 @@ namespace TagMarkerForScrobblers
             }
 
         }
+
+
+        private static void SetArtistAndTrackNameIfNotSet(string filePath)
+        {
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
+
+            TagLib.File taglibFile = TagLib.File.Create(filePath);
+
+            if (!HasArtist(taglibFile.Tag))
+            {
+                string artistName = GetArtistNameFromFileName(fileName);
+                taglibFile.Tag.Performers = new string[] { artistName };
+                taglibFile.Save();
+
+                Debug.WriteLine("Added artist name '" + artistName + "' to " + fileName);
+                Debug.WriteLine("");
+            }
+
+            if (!HasTrackTitle(taglibFile.Tag))
+            {
+                string trackTitle = GetTrackTitleFromFileName(fileName);
+                taglibFile.Tag.Title = trackTitle;
+                taglibFile.Save();
+
+                Debug.WriteLine("Added track title '" + trackTitle + "' to " + fileName);
+                Debug.WriteLine("");
+            }
+
+
+        }
+        private static string GetArtistNameFromFileName(string fileNameWithoutExtension)
+        {
+            if (String.IsNullOrEmpty(fileNameWithoutExtension))
+            {
+                return "Unknown Artist";
+            }
+
+            if (fileNameWithoutExtension.Contains(" - "))
+            {
+                return fileNameWithoutExtension
+                    .Split(new string[] { " - " }, StringSplitOptions.RemoveEmptyEntries)
+                    .First();
+            }
+            else
+            {
+                return "Unknown Artist";
+            }
+        }
+
+
+        private static string GetTrackTitleFromFileName(string fileNameWithoutExtension)
+        {
+            if (String.IsNullOrEmpty(fileNameWithoutExtension))
+            {
+                return "Unknown Title";
+            }
+
+            if (fileNameWithoutExtension.Contains("-"))
+            {
+                return string.Join("", fileNameWithoutExtension
+                    .Split(new string[] { " - " }, StringSplitOptions.RemoveEmptyEntries)
+                    .Skip(1));
+            }
+            else
+            {
+                return fileNameWithoutExtension;
+            }
+        }
+
+        private static bool HasArtist(Tag tag)
+        {
+            if (tag.Performers == null)
+            {
+                return false;
+            }
+
+            if (tag.Performers.Length == 0)
+            {
+                return false;
+            }
+
+            string firstArtist = tag.Performers.First();
+
+            if (String.IsNullOrEmpty(firstArtist))
+            {
+                return false;
+            }
+
+            if (firstArtist == "Unidentified" || firstArtist == "Unspecified")
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool HasTrackTitle(Tag tag)
+        {
+            if (String.IsNullOrEmpty(tag.Title))
+            {
+                return false;
+            }
+
+            if (tag.Title == "Unidentified" || tag.Title == "Unspecified")
+            {
+                return false;
+            }
+
+            return true;
+        }
+
 
         private static void AddFilenameTagMarker(Tag tag, string fileName)
         {
