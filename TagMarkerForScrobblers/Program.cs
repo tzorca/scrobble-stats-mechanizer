@@ -18,24 +18,77 @@ namespace TagMarkerForScrobblers
 
         static void Main(string[] args)
         {
-            LoadConfig();
-
-            List<string> audioFilePaths = Directory
-                .GetFiles(Config.AudioFileDirectory, "*.*", SearchOption.AllDirectories)
-                .ToList();
+            try
+            {
+                LoadConfig();
 
 
-            UpdateTags(audioFilePaths);
+                BackupScrobblerFile(Config.FilePath_MasterScrobbler, Config.DirectoryPath_ScrobblerBackups);
 
-            var scrobblerData = ScrobblerParseHelper.ParseScrobblerData(Config.ScrobblerFilePath);
+                SaveNewScrobbleDataFromMP3Player();
 
-            var aggregatedScrobblerStats = ScrobblerAggregationHelper.AggregateScrobblerData(scrobblerData);
+                List<string> audioFilePaths = Directory
+                    .GetFiles(Config.DirectoryPath_AudioFiles, "*.*", SearchOption.AllDirectories)
+                    .ToList();
+
+                UpdateTags(audioFilePaths);
+
+                var scrobblerData = ScrobblerParseHelper.ParseScrobblerData(Config.FilePath_MasterScrobbler);
+
+                var aggregatedScrobblerStats = ScrobblerAggregationHelper.AggregateScrobblerData(scrobblerData);
 
 
-            AddStatsToAudioFiles(audioFilePaths, aggregatedScrobblerStats);
+                ResetStats(audioFilePaths);
+                AddStatsToAudioFiles(audioFilePaths, aggregatedScrobblerStats);
 
 
-            BackupScrobblerFile(Config.ScrobblerFilePath, Config.ScrobblerBackupDirectory);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                Console.ReadLine();
+            }
+        }
+
+        private static void SaveNewScrobbleDataFromMP3Player()
+        {
+
+            var mp3PlayerScrobblerFilePath = GetMp3PlayerScrobblerFilePath();
+
+            // Load mp3 player scrobble file contents
+            var mp3PlayerScrobblerFileContents = System.IO.File.ReadAllText(mp3PlayerScrobblerFilePath);
+
+            // Load master scrobble file contents
+            var masterScrobbleFileContents = System.IO.File.ReadAllText(Config.FilePath_MasterScrobbler);
+
+            // Append MP3 Player scrobbler file contents to master scrobbler file and save
+            masterScrobbleFileContents += mp3PlayerScrobblerFileContents;
+            System.IO.File.WriteAllText(path: Config.FilePath_MasterScrobbler, contents: masterScrobbleFileContents);
+
+            // Truncate mp3 player scrobbler file
+            System.IO.File.WriteAllText(path: mp3PlayerScrobblerFilePath, contents: "");
+        }
+
+        private static string GetMp3PlayerScrobblerFilePath()
+        {
+            var driveInfoList = DriveInfo.GetDrives();
+
+            DirectoryInfo driveDirectory = null;
+            foreach (var driveInfo in driveInfoList)
+            {
+                if (driveInfo.VolumeLabel.ToLower() == Config.VolumeLabel_Mp3Player.ToLower())
+                {
+                    driveDirectory = driveInfo.RootDirectory;
+                    break;
+                }
+            }
+
+            if (driveDirectory == null)
+            {
+                throw new DriveNotFoundException("Could not find drive with volume label " + Config.VolumeLabel_Mp3Player);
+            }
+
+            return Path.Combine(driveDirectory.FullName, Config.RelativeFilePath_Mp3PlayerScrobbler);
         }
 
         private static void BackupScrobblerFile(string scrobblerFilePath, string scrobblerBackupDirectory)
@@ -47,6 +100,30 @@ namespace TagMarkerForScrobblers
 
             System.IO.File.Copy(scrobblerFilePath, resultFilename, true);
         }
+
+        private static void ResetStats(List<string> audioFilePaths)
+        {
+            foreach (var audioFilePath in audioFilePaths)
+            {
+                TagLib.File taglibFile = TagLib.File.Create(audioFilePath);
+
+                taglibFile.Tag.Copyright = "";
+                taglibFile.Tag.DiscCount = 0;
+                taglibFile.Tag.Disc = 0;
+                taglibFile.Tag.Comment = "";
+
+                taglibFile.Save();
+
+                Debug.WriteLine("");
+                Debug.WriteLine("Set Copyright (Weighted Rating) to blank");
+                Debug.WriteLine("Set Disc Count (Times Skipped) to 0");
+                Debug.WriteLine("Set Disc (Times Finished) to 0");
+                Debug.WriteLine("Set Comment (Last Played) to blank");
+
+                Debug.WriteLine("Reset stats for " + Path.GetFileNameWithoutExtension(audioFilePath));
+            }
+        }
+
 
         private static void AddStatsToAudioFiles(List<string> audioFilePaths, List<AudioFileStatInfo> audioFileStatList)
         {
@@ -70,19 +147,18 @@ namespace TagMarkerForScrobblers
 
                 TagLib.File taglibFile = TagLib.File.Create(fullFilePath);
 
+                taglibFile.Tag.Copyright = statInfo.WeightedRating;
                 taglibFile.Tag.DiscCount = statInfo.TimesSkipped;
                 taglibFile.Tag.Disc = statInfo.TimesFinished;
-                //SetCustomTag(id3v2_tag, "last_played", statInfo.LastPlayed.FormatAs_yyyyMMdd());
+                taglibFile.Tag.Comment = statInfo.LastPlayed.ToString("u");
 
                 taglibFile.Save();
 
-                Debug.WriteLine("Set Disc Count to " + statInfo.TimesSkipped.ToString());
-                Debug.WriteLine("Set Disc to " + statInfo.TimesFinished.ToString());
+                Debug.WriteLine("Set Copyright (Weighted Rating) to " + taglibFile.Tag.Copyright);
+                Debug.WriteLine("Set Disc Count (Times Skipped) to " + taglibFile.Tag.DiscCount);
+                Debug.WriteLine("Set Disc (Times Finished) to " + taglibFile.Tag.Disc);
+                Debug.WriteLine("Set Comment (Last Played) to " + taglibFile.Tag.AmazonId);
 
-                //if (statInfo.TimesSkipped > 2 || statInfo.TimesFinished > 2)
-                //{
-                //    var dc = 1; 
-                //}
                 Debug.WriteLine("Updated stats for " + statInfo.FileName);
             }
         }

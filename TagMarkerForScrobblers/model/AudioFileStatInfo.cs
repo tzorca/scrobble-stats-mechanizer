@@ -22,5 +22,6 @@ namespace TagMarkerForScrobblers.model
         public uint TimesFinished { get; private set; }
         public uint TimesSkipped { get; private set; }
         public DateTime LastPlayed { get; private set; }
+        public string WeightedRating { get; internal set; }
     }
 }

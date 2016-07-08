@@ -15,6 +15,9 @@ namespace TagMarkerForScrobblers
 
             var scrobblerDataLines = scrobblerData.SplitIntoLines();
 
+            // Keep only unique lines
+            scrobblerDataLines = scrobblerDataLines.Distinct().ToList();
+
             var linesWithIdentifiableTrack = scrobblerDataLines
                 .Where(l => l.Contains("[[") && l.Contains("]]"));
 

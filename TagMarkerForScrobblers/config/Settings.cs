@@ -8,9 +8,15 @@ namespace TagMarkerForScrobblers
 {
     class Settings
     {
-        public string ScrobblerBackupDirectory { get; set; }
-        public string ScrobblerFilePath { get; set; }
-        public string AudioFileDirectory { get; set; }
+        public string VolumeLabel_Mp3Player { get; set; }
+        public string RelativeFilePath_Mp3PlayerScrobbler { get; set; }
 
+        public string DirectoryPath_ScrobblerBackups { get; set; }
+        public string FilePath_MasterScrobbler { get; set; }
+        public string DirectoryPath_AudioFiles
+        {
+            get; set;
+
+        }
     }
 }
