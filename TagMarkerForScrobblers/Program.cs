@@ -14,6 +14,7 @@ namespace TagMarkerForScrobblers
 {
     class Program
     {
+        public static List<string> ErrorMessages = new List<string>();
         public static Settings Config { get; set; }
 
         static void Main(string[] args)
@@ -38,16 +39,27 @@ namespace TagMarkerForScrobblers
                 var aggregatedScrobblerStats = ScrobblerAggregationHelper.AggregateScrobblerData(scrobblerData);
 
 
-                ResetStats(audioFilePaths);
-                AddStatsToAudioFiles(audioFilePaths, aggregatedScrobblerStats);
+                // Don't bother resetting stats for now.
+                //TODO: Reset stats for all files that are not in the scrobble list but are in the directory.
+                //ResetStats(audioFilePaths);
 
+
+                AddStatsToAudioFiles(audioFilePaths, aggregatedScrobblerStats);
+                Console.WriteLine("Finished.");
 
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
-                Console.ReadLine();
+                ShowError(e.ToString());
             }
+
+            if (ErrorMessages.Count > 0)
+            {
+                PrintMessage("Errors encountered: ");
+                PrintMessage(string.Join(Environment.NewLine, ErrorMessages));
+            }
+
+            Console.ReadLine();
         }
 
         private static void SaveNewScrobbleDataFromMP3Player()
@@ -76,10 +88,18 @@ namespace TagMarkerForScrobblers
             DirectoryInfo driveDirectory = null;
             foreach (var driveInfo in driveInfoList)
             {
-                if (driveInfo.VolumeLabel.ToLower() == Config.VolumeLabel_Mp3Player.ToLower())
+                try
                 {
-                    driveDirectory = driveInfo.RootDirectory;
-                    break;
+                    if (driveInfo.VolumeLabel.ToLower() == Config.VolumeLabel_Mp3Player.ToLower())
+                    {
+                        driveDirectory = driveInfo.RootDirectory;
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    ShowError(e.Message);
+
                 }
             }
 
@@ -89,6 +109,12 @@ namespace TagMarkerForScrobblers
             }
 
             return Path.Combine(driveDirectory.FullName, Config.RelativeFilePath_Mp3PlayerScrobbler);
+        }
+
+        private static void ShowError(string message)
+        {
+            PrintMessage("Error: " + message);
+            ErrorMessages.Add(message);
         }
 
         private static void BackupScrobblerFile(string scrobblerFilePath, string scrobblerBackupDirectory)
@@ -114,16 +140,20 @@ namespace TagMarkerForScrobblers
 
                 taglibFile.Save();
 
-                Debug.WriteLine("");
-                Debug.WriteLine("Set Copyright (Weighted Rating) to blank");
-                Debug.WriteLine("Set Disc Count (Times Skipped) to 0");
-                Debug.WriteLine("Set Disc (Times Finished) to 0");
-                Debug.WriteLine("Set Comment (Last Played) to blank");
+                // impressions = times skipped + times finished
 
-                Debug.WriteLine("Reset stats for " + Path.GetFileNameWithoutExtension(audioFilePath));
+                PrintMessage(Path.GetFileNameWithoutExtension(audioFilePath) + ": Reset stats");
             }
         }
 
+        private static void PrintMessage(string msg)
+        {
+            // Remove BELL characters (cause beep)
+            msg = msg.Replace("•", "");
+
+            Debug.WriteLine(msg);
+            Console.Out.WriteLine(msg);
+        }
 
         private static void AddStatsToAudioFiles(List<string> audioFilePaths, List<AudioFileStatInfo> audioFileStatList)
         {
@@ -131,7 +161,7 @@ namespace TagMarkerForScrobblers
 
             foreach (var statInfo in audioFileStatList)
             {
-                Debug.WriteLine("");
+                PrintMessage("");
 
                 var matchingAudioFileNameSearch = audioFileNames
                     .Where(afn => afn.StartsWith(statInfo.FileName))
@@ -139,7 +169,7 @@ namespace TagMarkerForScrobblers
 
                 if (matchingAudioFileNameSearch.Count == 0)
                 {
-                    Debug.WriteLine("Could not find file named " + statInfo.FileName);
+                    PrintMessage("Could not find file named " + statInfo.FileName);
                     continue;
                 }
 
@@ -154,12 +184,15 @@ namespace TagMarkerForScrobblers
 
                 taglibFile.Save();
 
-                Debug.WriteLine("Set Copyright (Weighted Rating) to " + taglibFile.Tag.Copyright);
-                Debug.WriteLine("Set Disc Count (Times Skipped) to " + taglibFile.Tag.DiscCount);
-                Debug.WriteLine("Set Disc (Times Finished) to " + taglibFile.Tag.Disc);
-                Debug.WriteLine("Set Comment (Last Played) to " + taglibFile.Tag.AmazonId);
 
-                Debug.WriteLine("Updated stats for " + statInfo.FileName);
+                string changeSummary = Path.GetFileNameWithoutExtension(statInfo.FileName) + ": " + Environment.NewLine;
+
+                changeSummary += "Set Weighted Rating = " + taglibFile.Tag.Copyright + Environment.NewLine;
+                changeSummary += "Set Times Skipped = " + taglibFile.Tag.DiscCount + Environment.NewLine;
+                changeSummary += "Set Times Finished = " + taglibFile.Tag.Disc + Environment.NewLine;
+                changeSummary += "Set Last Played = " + taglibFile.Tag.Comment + Environment.NewLine;
+
+                PrintMessage(changeSummary);
             }
         }
 
@@ -174,7 +207,7 @@ namespace TagMarkerForScrobblers
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.ToString());
+                    PrintMessage(e.ToString());
                 }
             }
 
@@ -188,9 +221,9 @@ namespace TagMarkerForScrobblers
 
             if (HasFilenameTagMarker(taglibFile.Tag))
             {
-                Debug.WriteLine("Skipped " + fileName);
-                Debug.WriteLine("Already has tag marker.");
-                Debug.WriteLine("");
+                //PrintMessage("Skipped " + fileName);
+                //PrintMessage("Already has tag marker.");
+                //PrintMessage("");
                 return;
             }
             else
@@ -198,8 +231,8 @@ namespace TagMarkerForScrobblers
                 AddFilenameTagMarker(taglibFile.Tag, fileName);
                 taglibFile.Save();
 
-                Debug.WriteLine("Added tag marker to " + fileName);
-                Debug.WriteLine("");
+                PrintMessage("Added tag marker to " + fileName);
+                PrintMessage("");
             }
 
         }
@@ -217,8 +250,8 @@ namespace TagMarkerForScrobblers
                 taglibFile.Tag.Performers = new string[] { artistName };
                 taglibFile.Save();
 
-                Debug.WriteLine("Added artist name '" + artistName + "' to " + fileName);
-                Debug.WriteLine("");
+                PrintMessage("Added artist name '" + artistName + "' to " + fileName);
+                PrintMessage("");
             }
 
             if (!HasTrackTitle(taglibFile.Tag))
@@ -227,8 +260,8 @@ namespace TagMarkerForScrobblers
                 taglibFile.Tag.Title = trackTitle;
                 taglibFile.Save();
 
-                Debug.WriteLine("Added track title '" + trackTitle + "' to " + fileName);
-                Debug.WriteLine("");
+                PrintMessage("Added track title '" + trackTitle + "' to " + fileName);
+                PrintMessage("");
             }
 
 
