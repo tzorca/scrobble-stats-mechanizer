@@ -10,13 +10,8 @@ namespace TagMarkerForScrobblers
     {
         public string VolumeLabel_Mp3Player { get; set; }
         public string RelativeFilePath_Mp3PlayerScrobbler { get; set; }
-
         public string DirectoryPath_ScrobblerBackups { get; set; }
         public string FilePath_MasterScrobbler { get; set; }
-        public string DirectoryPath_AudioFiles
-        {
-            get; set;
-
-        }
+        public string DirectoryPath_AudioFiles { get; set; }
     }
 }

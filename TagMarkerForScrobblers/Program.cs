@@ -22,7 +22,6 @@ namespace TagMarkerForScrobblers
             {
                 LoadConfig();
 
-
                 BackupScrobblerFile(Config.FilePath_MasterScrobbler, Config.DirectoryPath_ScrobblerBackups);
 
                 SaveNewScrobbleDataFromMP3Player();
@@ -131,10 +130,10 @@ namespace TagMarkerForScrobblers
             {
                 TagLib.File taglibFile = TagLib.File.Create(audioFilePath);
 
-                taglibFile.Tag.Copyright = "";
-                taglibFile.Tag.DiscCount = 0;
-                taglibFile.Tag.Disc = 0;
-                taglibFile.Tag.Comment = "";
+                taglibFile.SetCustomValue(TagCustomKey.LastPlayed, "");
+                taglibFile.SetCustomValue(TagCustomKey.TimesFinished, "");
+                taglibFile.SetCustomValue(TagCustomKey.TimesSkipped, "");
+                taglibFile.SetCustomValue(TagCustomKey.WeightedRating, "");
 
                 taglibFile.Save();
 
@@ -175,20 +174,20 @@ namespace TagMarkerForScrobblers
 
                 TagLib.File taglibFile = TagLib.File.Create(fullFilePath);
 
-                taglibFile.Tag.Copyright = statInfo.WeightedRating;
-                taglibFile.Tag.DiscCount = statInfo.TimesSkipped;
-                taglibFile.Tag.Disc = statInfo.TimesFinished;
-                taglibFile.Tag.Comment = statInfo.LastPlayed.ToString("u");
+                taglibFile.SetCustomValue(TagCustomKey.WeightedRating, statInfo.WeightedRating);
+                taglibFile.SetCustomValue(TagCustomKey.TimesSkipped, statInfo.TimesSkipped);
+                taglibFile.SetCustomValue(TagCustomKey.TimesFinished, statInfo.TimesFinished);
+                taglibFile.SetCustomValue(TagCustomKey.LastPlayed, statInfo.LastPlayed.ToString("u"));
 
                 taglibFile.Save();
 
 
                 string changeSummary = Path.GetFileNameWithoutExtension(statInfo.PartialFileName) + ": " + Environment.NewLine;
 
-                changeSummary += "Set Weighted Rating = " + taglibFile.Tag.Copyright + Environment.NewLine;
-                changeSummary += "Set Times Skipped = " + taglibFile.Tag.DiscCount + Environment.NewLine;
-                changeSummary += "Set Times Finished = " + taglibFile.Tag.Disc + Environment.NewLine;
-                changeSummary += "Set Last Played = " + taglibFile.Tag.Comment + Environment.NewLine;
+                changeSummary += "Set Weighted Rating = " + taglibFile.GetCustomValue(TagCustomKey.WeightedRating) + Environment.NewLine;
+                changeSummary += "Set Times Skipped = " + taglibFile.GetCustomValue(TagCustomKey.TimesSkipped) + Environment.NewLine;
+                changeSummary += "Set Times Finished = " + taglibFile.GetCustomValue(TagCustomKey.TimesFinished) + Environment.NewLine;
+                changeSummary += "Set Last Played = " + taglibFile.GetCustomValue(TagCustomKey.LastPlayed) + Environment.NewLine;
 
                 PrintMessage(changeSummary);
             }
@@ -219,19 +218,14 @@ namespace TagMarkerForScrobblers
 
             if (HasFilenameTagMarker(taglibFile.Tag))
             {
-                //PrintMessage("Skipped " + fileName);
-                //PrintMessage("Already has tag marker.");
-                //PrintMessage("");
                 return;
             }
-            else
-            {
-                AddFilenameTagMarker(taglibFile.Tag, fileName);
-                taglibFile.Save();
 
-                PrintMessage("Added tag marker to " + fileName);
-                PrintMessage("");
-            }
+            AddFilenameTagMarker(taglibFile.Tag, fileName);
+            taglibFile.Save();
+
+            PrintMessage("Added tag marker to " + fileName);
+            PrintMessage("");
 
         }
 

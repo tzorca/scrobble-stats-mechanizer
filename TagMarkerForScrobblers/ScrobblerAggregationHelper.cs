@@ -31,7 +31,7 @@ namespace TagMarkerForScrobblers
                     }
                     else
                     {
-                        weightedRating += weight*2;
+                        weightedRating += weight * 2;
                     }
 
                     weight /= 1.5;

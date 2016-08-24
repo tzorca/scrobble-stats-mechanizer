@@ -55,8 +55,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MiscExtensions.cs" />
-    <Compile Include="MiscUtil.cs" />
+    <Compile Include="model\TagCustomKey.cs" />
+    <Compile Include="utilities\MiscExtensions.cs" />
+    <Compile Include="utilities\DateUtilities.cs" />
     <Compile Include="model\AudioFileStatInfo.cs" />
     <Compile Include="model\ScrobbleRecord.cs" />
     <Compile Include="Program.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="config\Settings.cs" />
     <Compile Include="ScrobblerAggregationHelper.cs" />
     <Compile Include="ScrobblerParseHelper.cs" />
+    <Compile Include="utilities\TagLibExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
