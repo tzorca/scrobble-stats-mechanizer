@@ -8,16 +8,16 @@ namespace TagMarkerForScrobblers.model
 {
     public class AudioFileStatInfo
     {
-        public AudioFileStatInfo(string fileName, uint timesStarted, uint timesSkipped, uint timesFinished, DateTime lastPlayed)
+        public AudioFileStatInfo(string partialFileName, uint timesStarted, uint timesSkipped, uint timesFinished, DateTime lastPlayed)
         {
-            this.FileName = fileName;
+            this.PartialFileName = partialFileName;
             this.TimesStarted = timesStarted;
             this.TimesSkipped = timesSkipped;
             this.TimesFinished = timesFinished;
             this.LastPlayed = lastPlayed;
         }
 
-        public string FileName { get; private set; }
+        public string PartialFileName { get; private set; }
         public uint TimesStarted { get; private set; }
         public uint TimesFinished { get; private set; }
         public uint TimesSkipped { get; private set; }

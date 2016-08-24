@@ -38,7 +38,6 @@ namespace TagMarkerForScrobblers
 
                 var aggregatedScrobblerStats = ScrobblerAggregationHelper.AggregateScrobblerData(scrobblerData);
 
-
                 // Don't bother resetting stats for now.
                 //TODO: Reset stats for all files that are not in the scrobble list but are in the directory.
                 //ResetStats(audioFilePaths);
@@ -164,12 +163,12 @@ namespace TagMarkerForScrobblers
                 PrintMessage("");
 
                 var matchingAudioFileNameSearch = audioFileNames
-                    .Where(afn => afn.StartsWith(statInfo.FileName))
+                    .Where(afn => afn.StartsWith(statInfo.PartialFileName))
                     .ToList();
 
                 if (matchingAudioFileNameSearch.Count == 0)
                 {
-                    PrintMessage("Could not find file named " + statInfo.FileName);
+                    PrintMessage("Could not find file named " + statInfo.PartialFileName);
                     continue;
                 }
 
@@ -185,7 +184,7 @@ namespace TagMarkerForScrobblers
                 taglibFile.Save();
 
 
-                string changeSummary = Path.GetFileNameWithoutExtension(statInfo.FileName) + ": " + Environment.NewLine;
+                string changeSummary = Path.GetFileNameWithoutExtension(statInfo.PartialFileName) + ": " + Environment.NewLine;
 
                 changeSummary += "Set Weighted Rating = " + taglibFile.Tag.Copyright + Environment.NewLine;
                 changeSummary += "Set Times Skipped = " + taglibFile.Tag.DiscCount + Environment.NewLine;

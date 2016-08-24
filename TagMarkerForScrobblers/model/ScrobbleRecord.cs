@@ -46,7 +46,7 @@ namespace TagMarkerForScrobblers.model
 
             return regexMatch.Substring(2, regexMatch.Length - 4);
         }
-        private static readonly Regex FILENAME_IN_ALBUM_REGEX = new Regex(@"\[\[.*\]\]");
+        private static readonly Regex FILENAME_IN_ALBUM_REGEX = new Regex(@"\[\[.*((\]\])|($))");
 
         public DateTime GetDateTime()
         {
