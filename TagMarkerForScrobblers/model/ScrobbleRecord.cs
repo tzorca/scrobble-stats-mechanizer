@@ -1,5 +1,4 @@
-﻿using MyUtils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +17,7 @@ namespace TagMarkerForScrobblers.model
             scrobbleRecord.Author = components[0];
             scrobbleRecord.Album = components[1];
             scrobbleRecord.Title = components[2];
-            scrobbleRecord.UnidentifiedNumber = components[3];
+            scrobbleRecord.UnidentifiedField1 = components[3];
             scrobbleRecord.TrackLength = components[4];
             scrobbleRecord.Skipped = (components[5] ?? "") == "S";
             scrobbleRecord.TimeStamp = components[6];
@@ -31,7 +30,7 @@ namespace TagMarkerForScrobblers.model
         public string Title { get; private set; }
         public string TimeStamp { get; private set; }
         public string TrackLength { get; private set; }
-        public string UnidentifiedNumber { get; private set; }
+        public string UnidentifiedField1 { get; private set; }
         public bool Skipped { get; private set; }
 
 
@@ -50,7 +49,7 @@ namespace TagMarkerForScrobblers.model
 
         public DateTime GetDateTime()
         {
-            return DateUtils.UnixTimeStampToDateTime(Double.Parse(TimeStamp));
+            return DateUtilities.UnixTimeStampToDateTime(Double.Parse(TimeStamp));
         }
 
     }
