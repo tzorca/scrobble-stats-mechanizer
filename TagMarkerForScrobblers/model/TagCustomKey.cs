@@ -8,6 +8,6 @@ namespace TagMarkerForScrobblers
 {
     public enum TagCustomKey
     {
-        WeightedRating, TimesSkipped, TimesFinished, LastPlayed
+        WeightedRating, TimesSkipped, TimesFinished, LastPlayed, FirstPlayed
     }
 }

@@ -30,10 +30,14 @@ namespace TagMarkerForScrobblers
                     .GetFiles(Config.DirectoryPath_AudioFiles, "*.*", SearchOption.AllDirectories)
                     .ToList();
 
-                UpdateTags(audioFilePaths);
+                var tagFiles = GetTagFiles(audioFilePaths);
 
+                InitializeTagValues(tagFiles);
+
+                PrintMessage("Parsing scrobbler data...");
                 var scrobblerData = ScrobblerParseHelper.ParseScrobblerData(Config.FilePath_MasterScrobbler);
 
+                PrintMessage("Aggregating scrobbler data...");
                 var aggregatedScrobblerStats = ScrobblerAggregationHelper.AggregateScrobblerData(scrobblerData);
 
                 // Don't bother resetting stats for now.
@@ -41,13 +45,13 @@ namespace TagMarkerForScrobblers
                 //ResetStats(audioFilePaths);
 
 
-                AddStatsToAudioFiles(audioFilePaths, aggregatedScrobblerStats);
+                UpdateScrobblerStatsInTagLibFiles(tagFiles, aggregatedScrobblerStats);
                 Console.WriteLine("Finished.");
 
             }
             catch (Exception e)
             {
-                ShowError(e.ToString());
+                PrintError(e.ToString());
             }
 
             if (ErrorMessages.Count > 0)
@@ -59,8 +63,54 @@ namespace TagMarkerForScrobblers
             Console.ReadLine();
         }
 
+        private static void InitializeTagValues(List<TagLib.File> tagLibFiles)
+        {
+            PrintMessage("Initializing tag values...");
+            foreach (var tagLibFile in tagLibFiles)
+            {
+                try
+                {
+                    string filePath = tagLibFile.Name;
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+
+                    bool saveNeeded = false;
+
+                    if (!HasFilenameTagMarker(tagLibFile.Tag))
+                    {
+                        AddFilenameTagMarkerToAlbum(tagLibFile.Tag, fileNameWithoutExt);
+                        saveNeeded = true;
+                    }
+
+                    if (!tagLibFile.Tag.HasArtist())
+                    {
+                        SetArtistFromFileName(tagLibFile, fileNameWithoutExt);
+                        saveNeeded = true;
+                    }
+
+                    if (!tagLibFile.Tag.HasTrackTitle())
+                    {
+                        SetTitleFromFileName(tagLibFile, fileNameWithoutExt);
+                        saveNeeded = true;
+                    }
+
+                    if (saveNeeded)
+                    {
+                        PrintMessage("Initializing tag values for " + fileNameWithoutExt);
+                        tagLibFile.Save();
+                        PrintMessage("");
+                    }
+                }
+                catch (Exception e)
+                {
+                    PrintError("Error initializing tag values: " + e.Message);
+                    PrintMessage("");
+                }
+            }
+        }
+
         private static void SaveNewScrobbleDataFromMP3Player()
         {
+            PrintMessage("Saving new scrobble data from MP3 player...");
 
             var mp3PlayerScrobblerFilePath = GetMp3PlayerScrobblerFilePath();
 
@@ -80,6 +130,7 @@ namespace TagMarkerForScrobblers
 
         private static string GetMp3PlayerScrobblerFilePath()
         {
+            PrintMessage("Finding MP3 player scrobbler file path...");
             var driveInfoList = DriveInfo.GetDrives();
 
             DirectoryInfo driveDirectory = null;
@@ -87,6 +138,12 @@ namespace TagMarkerForScrobblers
             {
                 try
                 {
+                    if (!driveInfo.IsReady)
+                    {
+                        PrintMessage(driveInfo.Name + " is not ready.");
+                        continue;
+                    }
+
                     if (driveInfo.VolumeLabel.ToLower() == Config.VolumeLabel_Mp3Player.ToLower())
                     {
                         driveDirectory = driveInfo.RootDirectory;
@@ -95,8 +152,7 @@ namespace TagMarkerForScrobblers
                 }
                 catch (Exception e)
                 {
-                    ShowError(e.Message);
-
+                    PrintError(e.Message);
                 }
             }
 
@@ -105,10 +161,12 @@ namespace TagMarkerForScrobblers
                 throw new DriveNotFoundException("Could not find drive with volume label " + Config.VolumeLabel_Mp3Player);
             }
 
-            return Path.Combine(driveDirectory.FullName, Config.RelativeFilePath_Mp3PlayerScrobbler);
+            string resultPath = Path.Combine(driveDirectory.FullName, Config.RelativeFilePath_Mp3PlayerScrobbler);
+            PrintMessage("Scrobble file path found.");
+            return resultPath;
         }
 
-        private static void ShowError(string message)
+        private static void PrintError(string message)
         {
             PrintMessage("Error: " + message);
             ErrorMessages.Add(message);
@@ -116,6 +174,8 @@ namespace TagMarkerForScrobblers
 
         private static void BackupScrobblerFile(string scrobblerFilePath, string scrobblerBackupDirectory)
         {
+            PrintMessage("Backing up current scrobbler file...");
+
             string dateStr = DateTime.Now.FormatAs_yyyyMMdd();
             string scrobblerFileName = Path.GetFileName(scrobblerFilePath);
 
@@ -131,6 +191,7 @@ namespace TagMarkerForScrobblers
                 TagLib.File taglibFile = TagLib.File.Create(audioFilePath);
 
                 taglibFile.SetCustomValue(TagCustomKey.LastPlayed, "");
+                taglibFile.SetCustomValue(TagCustomKey.FirstPlayed, "");
                 taglibFile.SetCustomValue(TagCustomKey.TimesFinished, "");
                 taglibFile.SetCustomValue(TagCustomKey.TimesSkipped, "");
                 taglibFile.SetCustomValue(TagCustomKey.WeightedRating, "");
@@ -152,112 +213,102 @@ namespace TagMarkerForScrobblers
             Console.Out.WriteLine(msg);
         }
 
-        private static void AddStatsToAudioFiles(List<string> audioFilePaths, List<AudioFileStatInfo> audioFileStatList)
+        private static void UpdateScrobblerStatsInTagLibFiles(List<TagLib.File> tagLibFiles, List<AudioFileStatInfo> audioFileStatList)
         {
-            var audioFileNames = audioFilePaths.Select(afp => Path.GetFileName(afp)).ToList();
+            PrintMessage("Updating scrobbler stats in audio files...");
 
             foreach (var statInfo in audioFileStatList)
             {
-                PrintMessage("");
-
-                var matchingAudioFileNameSearch = audioFileNames
-                    .Where(afn => afn.StartsWith(statInfo.PartialFileName))
-                    .ToList();
-
-                if (matchingAudioFileNameSearch.Count == 0)
-                {
-                    PrintMessage("Could not find file named " + statInfo.PartialFileName);
-                    continue;
-                }
-
-                var fullFilePath = audioFilePaths.Where(afp => afp.EndsWith(matchingAudioFileNameSearch.First())).First();
-
-                TagLib.File taglibFile = TagLib.File.Create(fullFilePath);
-
-                taglibFile.SetCustomValue(TagCustomKey.WeightedRating, statInfo.WeightedRating);
-                taglibFile.SetCustomValue(TagCustomKey.TimesSkipped, statInfo.TimesSkipped);
-                taglibFile.SetCustomValue(TagCustomKey.TimesFinished, statInfo.TimesFinished);
-                taglibFile.SetCustomValue(TagCustomKey.LastPlayed, statInfo.LastPlayed.ToString("u"));
-
-                taglibFile.Save();
-
-
-                string changeSummary = Path.GetFileNameWithoutExtension(statInfo.PartialFileName) + ": " + Environment.NewLine;
-
-                changeSummary += "Set Weighted Rating = " + taglibFile.GetCustomValue(TagCustomKey.WeightedRating) + Environment.NewLine;
-                changeSummary += "Set Times Skipped = " + taglibFile.GetCustomValue(TagCustomKey.TimesSkipped) + Environment.NewLine;
-                changeSummary += "Set Times Finished = " + taglibFile.GetCustomValue(TagCustomKey.TimesFinished) + Environment.NewLine;
-                changeSummary += "Set Last Played = " + taglibFile.GetCustomValue(TagCustomKey.LastPlayed) + Environment.NewLine;
-
-                PrintMessage(changeSummary);
-            }
-        }
-
-        private static void UpdateTags(List<string> filePaths)
-        {
-            foreach (var filePath in filePaths)
-            {
                 try
                 {
-                    AddFilenameTagMarkerIfNotAlreadyAdded(filePath);
-                    SetArtistAndTrackNameIfNotSet(filePath);
+                    var matchingTagLibFileSearch = tagLibFiles
+                        .Where(tagLibFile => Path.GetFileNameWithoutExtension(tagLibFile.Name).StartsWith(statInfo.PartialFileName))
+                        .ToList();
+
+                    if (matchingTagLibFileSearch.Count == 0)
+                    {
+                        // No matching file
+                        continue;
+                    }
+
+                    if (matchingTagLibFileSearch.Count > 1)
+                    {
+                        // Non-fatal error, but will want to warn about this
+                        PrintError("More than one match for " + statInfo.PartialFileName);
+                    }
+
+                    TagLib.File taglibFile = matchingTagLibFileSearch.First();
+
+                    if (UpdateScrobblerStatsInTagLibFile(taglibFile, statInfo))
+                    {
+                        taglibFile.Save();
+                        PrintMessage("Updated scrobbler stats for " + statInfo.PartialFileName);
+                    }
                 }
                 catch (Exception e)
                 {
-                    PrintMessage(e.ToString());
+                    PrintError("Could not update stats for " + statInfo.PartialFileName + ": " + e.Message);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Returns true if one or more stats were changed
+        /// </summary>
+        /// <param name="taglibFile"></param>
+        /// <param name="newStatInfo"></param>
+        /// <returns>True if one or more stats were changed</returns>
+        private static bool UpdateScrobblerStatsInTagLibFile(TagLib.File taglibFile, AudioFileStatInfo newStatInfo)
+        {
+            bool statsChanged = false;
+            statsChanged = taglibFile.SetCustomValue(TagCustomKey.WeightedRating, newStatInfo.WeightedRating) || statsChanged;
+            statsChanged = taglibFile.SetCustomValue(TagCustomKey.TimesSkipped, newStatInfo.TimesSkipped) || statsChanged;
+            statsChanged = taglibFile.SetCustomValue(TagCustomKey.TimesFinished, newStatInfo.TimesFinished) || statsChanged;
+            statsChanged = taglibFile.SetCustomValue(TagCustomKey.LastPlayed, newStatInfo.LastPlayed.ToString("u")) || statsChanged;
+            statsChanged = taglibFile.SetCustomValue(TagCustomKey.FirstPlayed, newStatInfo.FirstPlayed.ToString("u")) || statsChanged;
+
+            return statsChanged;
+        }
+
+        private static List<TagLib.File> GetTagFiles(List<string> filePaths)
+        {
+            PrintMessage("Loading tags from audio files...");
+
+            var tagLibFiles = new List<TagLib.File>();
+            foreach (var filePath in filePaths)
+            {
+                string fileNameWithoutExt = "";
+                try
+                {
+                    fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
+                    TagLib.File tagLibFile = TagLib.File.Create(filePath);
+                    tagLibFiles.Add(tagLibFile);
+                }
+                catch (Exception e)
+                {
+                    PrintError("Error loading tags for " + fileNameWithoutExt + ": " + e.ToString());
                 }
             }
 
+            return tagLibFiles;
         }
 
-        private static void AddFilenameTagMarkerIfNotAlreadyAdded(string filePath)
+        private static void SetArtistFromFileName(TagLib.File taglibFile, string fileNameWithoutExt)
         {
-            string fileName = Path.GetFileNameWithoutExtension(filePath);
+            string artistName = GetArtistNameFromFileName(fileNameWithoutExt);
+            taglibFile.Tag.Performers = new string[] { artistName };
 
-            TagLib.File taglibFile = TagLib.File.Create(filePath);
-
-            if (HasFilenameTagMarker(taglibFile.Tag))
-            {
-                return;
-            }
-
-            AddFilenameTagMarker(taglibFile.Tag, fileName);
-            taglibFile.Save();
-
-            PrintMessage("Added tag marker to " + fileName);
-            PrintMessage("");
-
+            PrintMessage("Set artist to " + artistName);
         }
-
-
-        private static void SetArtistAndTrackNameIfNotSet(string filePath)
+        private static void SetTitleFromFileName(TagLib.File taglibFile, string fileNameWithoutExt)
         {
-            string fileName = Path.GetFileNameWithoutExtension(filePath);
+            string trackTitle = DetermineTrackTitleFromFileName(fileNameWithoutExt);
+            taglibFile.Tag.Title = trackTitle;
 
-            TagLib.File taglibFile = TagLib.File.Create(filePath);
-
-            if (!HasArtist(taglibFile.Tag))
-            {
-                string artistName = GetArtistNameFromFileName(fileName);
-                taglibFile.Tag.Performers = new string[] { artistName };
-                taglibFile.Save();
-
-                PrintMessage("Added artist name '" + artistName + "' to " + fileName);
-                PrintMessage("");
-            }
-
-            if (!HasTrackTitle(taglibFile.Tag))
-            {
-                string trackTitle = GetTrackTitleFromFileName(fileName);
-                taglibFile.Tag.Title = trackTitle;
-                taglibFile.Save();
-
-                PrintMessage("Added track title '" + trackTitle + "' to " + fileName);
-                PrintMessage("");
-            }
-
-
+            PrintMessage("Set title to " + trackTitle);
         }
+
+
         private static string GetArtistNameFromFileName(string fileNameWithoutExtension)
         {
             if (String.IsNullOrEmpty(fileNameWithoutExtension))
@@ -278,7 +329,7 @@ namespace TagMarkerForScrobblers
         }
 
 
-        private static string GetTrackTitleFromFileName(string fileNameWithoutExtension)
+        private static string DetermineTrackTitleFromFileName(string fileNameWithoutExtension)
         {
             if (String.IsNullOrEmpty(fileNameWithoutExtension))
             {
@@ -287,7 +338,7 @@ namespace TagMarkerForScrobblers
 
             if (fileNameWithoutExtension.Contains("-"))
             {
-                return string.Join("", fileNameWithoutExtension
+                return string.Join(" - ", fileNameWithoutExtension
                     .Split(new string[] { " - " }, StringSplitOptions.RemoveEmptyEntries)
                     .Skip(1));
             }
@@ -297,57 +348,19 @@ namespace TagMarkerForScrobblers
             }
         }
 
-        private static bool HasArtist(Tag tag)
-        {
-            if (tag.Performers == null)
-            {
-                return false;
-            }
-
-            if (tag.Performers.Length == 0)
-            {
-                return false;
-            }
-
-            string firstArtist = tag.Performers.First();
-
-            if (String.IsNullOrEmpty(firstArtist))
-            {
-                return false;
-            }
-
-            if (firstArtist == "Unidentified" || firstArtist == "Unspecified")
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool HasTrackTitle(Tag tag)
-        {
-            if (String.IsNullOrEmpty(tag.Title))
-            {
-                return false;
-            }
-
-            if (tag.Title == "Unidentified" || tag.Title == "Unspecified")
-            {
-                return false;
-            }
-
-            return true;
-        }
 
 
-        private static void AddFilenameTagMarker(Tag tag, string fileName)
+
+        private static void AddFilenameTagMarkerToAlbum(Tag tag, string fileNameWithoutExt)
         {
             if (tag.Album == null)
             {
                 tag.Album = "";
             }
 
-            tag.Album += " [[" + fileName + "]]";
+            tag.Album += " [[" + fileNameWithoutExt + "]]";
+
+            PrintMessage("Added filename tag identifier to Album");
         }
 
         private static bool HasFilenameTagMarker(Tag tag)
@@ -362,6 +375,7 @@ namespace TagMarkerForScrobblers
 
         private static void LoadConfig()
         {
+            PrintMessage("Reading config file...");
             string configText = System.IO.File.ReadAllText("tag-marker.js");
             Config = JsonConvert.DeserializeObject<Settings>(configText);
 

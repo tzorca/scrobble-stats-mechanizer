@@ -18,6 +18,7 @@ namespace TagMarkerForScrobblers
                 uint timesSkipped = (uint)fileHistory.Where(s => s.Skipped).Count();
                 uint timesFinished = (uint)fileHistory.Where(s => !s.Skipped).Count();
                 DateTime lastPlayed = fileHistory.Max(s => s.GetDateTime());
+                DateTime firstPlayed = fileHistory.Min(s => s.GetDateTime());
 
                 // Calculate weighted rating
                 double weight = 50;
@@ -37,7 +38,16 @@ namespace TagMarkerForScrobblers
                     weight /= 1.5;
                 }
 
-                var audioFileStatInfo = new AudioFileStatInfo(fileHistory.Key, timesStarted, timesSkipped, timesFinished, lastPlayed);
+                var audioFileStatInfo = new AudioFileStatInfo
+                (
+                    partialFileName: fileHistory.Key,
+                    timesStarted: timesStarted,
+                    timesSkipped: timesSkipped,
+                    timesFinished: timesFinished,
+                    lastPlayed: lastPlayed,
+                    firstPlayed: firstPlayed
+                );
+
                 audioFileStatInfo.WeightedRating = ((int)weightedRating).ToString();
 
                 audioFileStatInfoList.Add(audioFileStatInfo);

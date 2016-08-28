@@ -10,11 +10,22 @@ namespace TagMarkerForScrobblers
 {
     public static class TagLibExtensions
     {
-        public static void SetCustomValue(this TagLib.File tagLibFile, TagCustomKey key, object value)
+        /// <summary>
+        /// Returns true if the new value was different than the previous value
+        /// </summary>
+        /// <param name="tagLibFile"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns>True if the new value was different than the previous value</returns>
+        public static bool SetCustomValue(this TagLib.File tagLibFile, TagCustomKey key, object value)
         {
+            var previousValue = tagLibFile.GetCustomValue(key);
+
             string[] arrayVal = new string[] { value == null ? null : value.ToString() };
 
             tagLibFile.SetUserTextInformationFrameValue(key.ToString(), arrayVal);
+
+            return previousValue != value.ToString();
         }
 
         public static string GetCustomValue(this TagLib.File tagLibFile, TagCustomKey key)
@@ -66,5 +77,45 @@ namespace TagMarkerForScrobblers
             return (TagLib.Id3v2.Tag)tagLibFile.GetTag(TagTypes.Id3v2, true);
         }
 
+
+        public static bool HasArtist(this TagLib.Tag tag)
+        {
+            if (tag.Performers == null)
+            {
+                return false;
+            }
+
+            if (tag.Performers.Length == 0)
+            {
+                return false;
+            }
+
+            if (tag.Performers.All(p => String.IsNullOrWhiteSpace(p)))
+            {
+                return false;
+            }
+
+            if (tag.Performers.All(p => p.ToLower() == "unknown artist" || p.ToLower() == "unknown"))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool HasTrackTitle(this TagLib.Tag tag)
+        {
+            if (String.IsNullOrEmpty(tag.Title))
+            {
+                return false;
+            }
+
+            if (tag.Title == "Unidentified" || tag.Title == "Unspecified")
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }
