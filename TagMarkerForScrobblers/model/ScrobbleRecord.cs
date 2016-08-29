@@ -34,6 +34,7 @@ namespace TagMarkerForScrobblers.model
         public bool Skipped { get; private set; }
 
 
+        [Obsolete]
         public string GetFilenameFromAlbum()
         {
             if (!FILENAME_IN_ALBUM_REGEX.IsMatch(Album))
@@ -50,6 +51,11 @@ namespace TagMarkerForScrobblers.model
         public DateTime GetDateTime()
         {
             return DateUtilities.UnixTimeStampToDateTime(Double.Parse(TimeStamp));
+        }
+
+        public string ArtistTitleGrouping()
+        {
+            return Album + " - " + Author;
         }
 
     }

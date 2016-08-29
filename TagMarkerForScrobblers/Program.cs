@@ -75,11 +75,12 @@ namespace TagMarkerForScrobblers
 
                     bool saveNeeded = false;
 
-                    if (!HasFilenameTagMarker(tagLibFile.Tag))
-                    {
-                        AddFilenameTagMarkerToAlbum(tagLibFile.Tag, fileNameWithoutExt);
-                        saveNeeded = true;
-                    }
+                    // TODO: Remove this logic completely
+                    //if (!HasFilenameTagMarker(tagLibFile.Tag))
+                    //{
+                    //    AddFilenameTagMarkerToAlbum(tagLibFile.Tag, fileNameWithoutExt);
+                    //    saveNeeded = true;
+                    //}
 
                     if (!tagLibFile.Tag.HasArtist())
                     {
@@ -222,7 +223,7 @@ namespace TagMarkerForScrobblers
                 try
                 {
                     var matchingTagLibFileSearch = tagLibFiles
-                        .Where(tagLibFile => Path.GetFileNameWithoutExtension(tagLibFile.Name).StartsWith(statInfo.PartialFileName))
+                        .Where(tagLibFile => SongMatches(tagLibFile, statInfo))
                         .ToList();
 
                     if (matchingTagLibFileSearch.Count == 0)
@@ -242,7 +243,7 @@ namespace TagMarkerForScrobblers
                     if (UpdateScrobblerStatsInTagLibFile(taglibFile, statInfo))
                     {
                         taglibFile.Save();
-                        PrintMessage("Updated scrobbler stats for " + statInfo.PartialFileName);
+                        //PrintMessage("Updated scrobbler stats for " + statInfo.PartialFileName);
                     }
                 }
                 catch (Exception e)
@@ -250,6 +251,32 @@ namespace TagMarkerForScrobblers
                     PrintError("Could not update stats for " + statInfo.PartialFileName + ": " + e.Message);
                 }
             }
+        }
+
+        private static bool SongMatches(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
+        {
+            return ArtistAndTitleMatch(tagLibFile, statInfo);
+
+        }
+
+        private static bool AlbumDerivedPartialFileNameMatches(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
+        {
+            return Path.GetFileNameWithoutExtension(tagLibFile.Name).StartsWith(statInfo.PartialFileName);
+        }
+
+        private static bool ArtistAndTitleMatch(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
+        {
+            if (!tagLibFile.Tag.Title.StartsWith(statInfo.Title))
+            {
+                return false;
+            }
+
+            if (!tagLibFile.Tag.Performers.First().StartsWith(statInfo.Artist))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -350,7 +377,7 @@ namespace TagMarkerForScrobblers
 
 
 
-
+        [Obsolete]
         private static void AddFilenameTagMarkerToAlbum(Tag tag, string fileNameWithoutExt)
         {
             if (tag.Album == null)
@@ -363,6 +390,7 @@ namespace TagMarkerForScrobblers
             PrintMessage("Added filename tag identifier to Album");
         }
 
+        [Obsolete]
         private static bool HasFilenameTagMarker(Tag tag)
         {
             if (tag.Album == null)

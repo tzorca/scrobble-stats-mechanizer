@@ -9,7 +9,7 @@ namespace TagMarkerForScrobblers
     {
         internal static List<AudioFileStatInfo> AggregateScrobblerData(List<ScrobbleRecord> scrobblerRecords)
         {
-            var recordsByFilename = scrobblerRecords.GroupBy(sr => sr.GetFilenameFromAlbum());
+            var recordsByFilename = scrobblerRecords.GroupBy(sr => sr.ArtistTitleGrouping());
 
             var audioFileStatInfoList = new List<AudioFileStatInfo>();
             foreach (var fileHistory in recordsByFilename)
@@ -40,7 +40,10 @@ namespace TagMarkerForScrobblers
 
                 var audioFileStatInfo = new AudioFileStatInfo
                 (
-                    partialFileName: fileHistory.Key,
+                    partialFileName: fileHistory.First().GetFilenameFromAlbum(),
+                    title: fileHistory.First().Title,
+                    artist: fileHistory.First().Author,
+                    album: fileHistory.First().Author,
                     timesStarted: timesStarted,
                     timesSkipped: timesSkipped,
                     timesFinished: timesFinished,
