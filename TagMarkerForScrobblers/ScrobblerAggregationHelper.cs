@@ -40,7 +40,6 @@ namespace TagMarkerForScrobblers
 
                 var audioFileStatInfo = new AudioFileStatInfo
                 (
-                    partialFileName: fileHistory.First().GetFilenameFromAlbum(),
                     title: fileHistory.First().Title,
                     artist: fileHistory.First().Author,
                     album: fileHistory.First().Author,

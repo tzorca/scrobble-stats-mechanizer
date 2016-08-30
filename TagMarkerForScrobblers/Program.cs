@@ -75,13 +75,6 @@ namespace TagMarkerForScrobblers
 
                     bool saveNeeded = false;
 
-                    // TODO: Remove this logic completely
-                    //if (!HasFilenameTagMarker(tagLibFile.Tag))
-                    //{
-                    //    AddFilenameTagMarkerToAlbum(tagLibFile.Tag, fileNameWithoutExt);
-                    //    saveNeeded = true;
-                    //}
-
                     if (!tagLibFile.Tag.HasArtist())
                     {
                         SetArtistFromFileName(tagLibFile, fileNameWithoutExt);
@@ -201,7 +194,7 @@ namespace TagMarkerForScrobblers
 
                 // impressions = times skipped + times finished
 
-                PrintMessage(Path.GetFileNameWithoutExtension(audioFilePath) + ": Reset stats");
+                PrintMessage("Reset stats for " + Path.GetFileNameWithoutExtension(audioFilePath));
             }
         }
 
@@ -222,61 +215,63 @@ namespace TagMarkerForScrobblers
             {
                 try
                 {
-                    var matchingTagLibFileSearch = tagLibFiles
-                        .Where(tagLibFile => SongMatches(tagLibFile, statInfo))
+                    var tagLibFilesByMatchPercentage = tagLibFiles
+                        .GroupBy(tagLibFile => GetArtistAndTitleMatchStrength(tagLibFile, statInfo))
+                        .OrderByDescending(group => group.Key)
                         .ToList();
 
-                    if (matchingTagLibFileSearch.Count == 0)
+                    var bestMatchGroup = tagLibFilesByMatchPercentage.First();
+
+                    if (bestMatchGroup.Key == 0)
                     {
-                        // No matching file
+                        // No good matches
                         continue;
                     }
 
-                    if (matchingTagLibFileSearch.Count > 1)
+                    TagLib.File taglibFile = bestMatchGroup.First();
+
+                    if (bestMatchGroup.Count() > 1)
                     {
                         // Non-fatal error, but will want to warn about this
-                        PrintError("More than one match for " + statInfo.PartialFileName);
+                        PrintError(String.Format("More than one {0:0.0}% match for {1}",
+                            bestMatchGroup.Key * 100, statInfo.ToString())); ;
                     }
-
-                    TagLib.File taglibFile = matchingTagLibFileSearch.First();
 
                     if (UpdateScrobblerStatsInTagLibFile(taglibFile, statInfo))
                     {
                         taglibFile.Save();
-                        //PrintMessage("Updated scrobbler stats for " + statInfo.PartialFileName);
                     }
                 }
                 catch (Exception e)
                 {
-                    PrintError("Could not update stats for " + statInfo.PartialFileName + ": " + e.Message);
+                    PrintError("Could not update stats for " + statInfo.ToString() + ": " + e.Message);
                 }
             }
         }
 
-        private static bool SongMatches(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
-        {
-            return ArtistAndTitleMatch(tagLibFile, statInfo);
-
-        }
-
-        private static bool AlbumDerivedPartialFileNameMatches(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
-        {
-            return Path.GetFileNameWithoutExtension(tagLibFile.Name).StartsWith(statInfo.PartialFileName);
-        }
-
-        private static bool ArtistAndTitleMatch(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
+        /// <summary>
+        /// Returns the percentage of characters in the file tags that match characters in the stats.
+        /// Requires at least a StartsWith match to return a non-zero result.
+        /// </summary>
+        /// <param name="tagLibFile"></param>
+        /// <param name="statInfo"></param>
+        /// <returns>Percentage of match strength. Will return 0 if the match has no possibility of being valid.</returns>
+        private static double GetArtistAndTitleMatchStrength(TagLib.File tagLibFile, AudioFileStatInfo statInfo)
         {
             if (!tagLibFile.Tag.Title.StartsWith(statInfo.Title))
             {
-                return false;
+                return 0;
             }
 
-            if (!tagLibFile.Tag.Performers.First().StartsWith(statInfo.Artist))
+            var fileTagFirstArtist = tagLibFile.Tag.Performers.First();
+            if (!fileTagFirstArtist.StartsWith(statInfo.Artist))
             {
-                return false;
+                return 0;
             }
 
-            return true;
+            double titleMatchStrength = (statInfo.Title.Length / (double)tagLibFile.Tag.Title.Length);
+            double artistMatchStrength = (statInfo.Artist.Length / (double)fileTagFirstArtist.Length);
+            return (titleMatchStrength + artistMatchStrength) / 2d;
         }
 
         /// <summary>
@@ -373,32 +368,6 @@ namespace TagMarkerForScrobblers
             {
                 return fileNameWithoutExtension;
             }
-        }
-
-
-
-        [Obsolete]
-        private static void AddFilenameTagMarkerToAlbum(Tag tag, string fileNameWithoutExt)
-        {
-            if (tag.Album == null)
-            {
-                tag.Album = "";
-            }
-
-            tag.Album += " [[" + fileNameWithoutExt + "]]";
-
-            PrintMessage("Added filename tag identifier to Album");
-        }
-
-        [Obsolete]
-        private static bool HasFilenameTagMarker(Tag tag)
-        {
-            if (tag.Album == null)
-            {
-                return false;
-            }
-
-            return tag.Album.Contains(" [[") && tag.Album.EndsWith("]]");
         }
 
         private static void LoadConfig()

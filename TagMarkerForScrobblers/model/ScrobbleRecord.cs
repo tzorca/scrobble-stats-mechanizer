@@ -34,19 +34,6 @@ namespace TagMarkerForScrobblers.model
         public bool Skipped { get; private set; }
 
 
-        [Obsolete]
-        public string GetFilenameFromAlbum()
-        {
-            if (!FILENAME_IN_ALBUM_REGEX.IsMatch(Album))
-            {
-                throw new KeyNotFoundException("No filename was found in the album name.");
-            }
-
-            var regexMatch = FILENAME_IN_ALBUM_REGEX.Match(Album).Value;
-
-            return regexMatch.Substring(2, regexMatch.Length - 4);
-        }
-        private static readonly Regex FILENAME_IN_ALBUM_REGEX = new Regex(@"\[\[.*((\]\])|($))");
 
         public DateTime GetDateTime()
         {
