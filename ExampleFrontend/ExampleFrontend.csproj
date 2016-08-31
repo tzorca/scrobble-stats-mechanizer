@@ -4,14 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E6FC7C33-0544-462E-853B-DC798A992F50}</ProjectGuid>
+    <ProjectGuid>{DB8CB924-D726-4CE5-952A-72E8E5961726}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TagMarkerForScrobblers</RootNamespace>
-    <AssemblyName>TagMarkerForScrobblers</AssemblyName>
+    <RootNamespace>ScrobbleStatsMechanizer.ExampleFrontend</RootNamespace>
+    <AssemblyName>ExampleFrontend</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,8 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="policy.2.0.taglib-sharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
@@ -55,21 +56,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="model\TagCustomKey.cs" />
-    <Compile Include="utilities\MiscExtensions.cs" />
-    <Compile Include="utilities\DateUtilities.cs" />
-    <Compile Include="model\AudioFileStatInfo.cs" />
-    <Compile Include="model\ScrobbleRecord.cs" />
+    <Compile Include="config\Settings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="config\Settings.cs" />
-    <Compile Include="ScrobblerAggregationHelper.cs" />
-    <Compile Include="ScrobblerParseHelper.cs" />
-    <Compile Include="utilities\TagLibExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScrobbleTagMarker\ScrobbleTagMarker.csproj">
+      <Project>{e6fc7c33-0544-462e-853b-dc798a992f50}</Project>
+      <Name>ScrobbleTagMarker</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

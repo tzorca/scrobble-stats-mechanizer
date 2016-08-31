@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace TagMarkerForScrobblers.model
+namespace ScrobbleStatsMechanizer
 {
     public class ScrobbleRecord
     {
@@ -45,5 +45,9 @@ namespace TagMarkerForScrobblers.model
             return Album + " - " + Author;
         }
 
+        internal static bool IsValidLine(string line)
+        {
+            return line.Count(c => c == '\t') >= 7;
+        }
     }
 }

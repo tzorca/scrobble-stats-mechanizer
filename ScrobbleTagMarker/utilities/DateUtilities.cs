@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TagMarkerForScrobblers
+namespace ScrobbleStatsMechanizer
 {
-    public class DateUtilities
+    internal class DateUtilities
     {
         /// <summary>
         /// Sourced from http://stackoverflow.com/a/250400

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TagMarkerForScrobblers
+namespace ScrobbleStatsMechanizer
 {
-    class Settings
+    internal class Settings
     {
         public string VolumeLabel_Mp3Player { get; set; }
         public string RelativeFilePath_Mp3PlayerScrobbler { get; set; }

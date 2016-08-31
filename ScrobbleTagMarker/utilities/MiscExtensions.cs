@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TagMarkerForScrobblers
+namespace ScrobbleStatsMechanizer
 {
-    public static class MiscExtensions
+    internal static class MiscExtensions
     {
         public static string FormatAs_yyyyMMdd(this DateTime dateTime)
         {

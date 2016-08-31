@@ -6,9 +6,9 @@ using TagLib.Id3v2;
 using System.Threading.Tasks;
 using TagLib;
 
-namespace TagMarkerForScrobblers
+namespace ScrobbleStatsMechanizer
 {
-    public static class TagLibExtensions
+    internal static class TagLibExtensions
     {
         /// <summary>
         /// Returns true if the new value was different than the previous value

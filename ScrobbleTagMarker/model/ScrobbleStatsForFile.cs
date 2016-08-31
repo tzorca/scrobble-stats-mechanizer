@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TagMarkerForScrobblers.model
+namespace ScrobbleStatsMechanizer
 {
-    public class AudioFileStatInfo
+    public class ScrobbleStatsForFile
     {
-        public AudioFileStatInfo(string title, string artist, string album, uint timesStarted, uint timesSkipped, uint timesFinished, DateTime lastPlayed, DateTime firstPlayed)
+        public ScrobbleStatsForFile(string title, string artist, string album, uint timesStarted, uint timesSkipped, uint timesFinished, DateTime lastPlayed, DateTime firstPlayed)
         {
             this.Title = title;
             this.Artist = artist;
