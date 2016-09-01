@@ -13,10 +13,11 @@ namespace ScrobbleStatsMechanizer
     public class ScrobbleTagMarker
     {
         /// <summary>
-        /// TODO: Document this function.
+        /// Uses Title and Arist to combine different stat records into single combined entry for that track. A unique combination of Title and Artist will generally represent a single file.
+        /// Combined entry includes statistics such as times skipped, times finihsed, weighted rating, last played, etc.
         /// </summary>
-        /// <param name="scrobblerRecords"></param>
-        /// <returns></returns>
+        /// <param name="scrobblerRecords">The list of ScrobblerRecords to combine into ScrobblerStatsForFiles</param>
+        /// <returns>A list of scrobbler stats that are each based on a single file (Artist + Title)</returns>
         public List<ScrobbleStatsForFile> AggregateScrobblerData(List<ScrobbleRecord> scrobblerRecords)
         {
             var recordsByFilename = scrobblerRecords.GroupBy(sr => sr.ArtistTitleGrouping());
@@ -69,10 +70,10 @@ namespace ScrobbleStatsMechanizer
         }
 
         /// <summary>
-        /// TODO: Document this function.
+        /// Parses lines in a scrobble format file to make ScrobbleRecords
         /// </summary>
-        /// <param name="masterScrobbleFilePath"></param>
-        /// <returns></returns>
+        /// <param name="masterScrobbleFilePath">The complete path to the master scrobbler file</param>
+        /// <returns>A list of ScrobbleRecord</returns>
         public List<ScrobbleRecord> ParseScrobblerData(string masterScrobbleFilePath)
         {
             string scrobblerData = System.IO.File.ReadAllText(masterScrobbleFilePath);
@@ -92,10 +93,10 @@ namespace ScrobbleStatsMechanizer
         }
 
         /// <summary>
-        /// TODO: Document this function.
+        /// If a file doesn't have artist and title tags set, sets them by deriving the values from the filename. If a file already has artist and title tags set, this function will do nothing.
         /// </summary>
-        /// <param name="tagLibFile"></param>
-        /// <returns>True if tags were saved</returns>
+        /// <param name="tagLibFile">The tag lib file for which to initialize tags</param>
+        /// <returns>True if tags were updated and saved</returns>
         public bool InitializeArtistAndTitleTags(TagLib.File tagLibFile)
         {
 
@@ -135,8 +136,6 @@ namespace ScrobbleStatsMechanizer
         /// <param name="truncateScrobblerFile">If true, the contents of the PMP scrobbler file will be set to a blank string.</param>
         public void SaveNewScrobbleDataFromMP3Player(string pmpScrobbleFilePath, string masterScrobbleFilePath, bool truncateScrobblerFile = false)
         {
-
-
             // Load mp3 player scrobble file contents
             var mp3PlayerScrobblerFileContents = System.IO.File.ReadAllText(pmpScrobbleFilePath);
 
@@ -155,10 +154,10 @@ namespace ScrobbleStatsMechanizer
         }
 
         /// <summary>
-        /// TODO: Document this function.
+        /// Copies the file at masterScrobblerFilePath to the masterScrobbleBackupDirectoryPath directory, including a date string to separate backups from different dates.
         /// </summary>
-        /// <param name="masterScrobbleFilePath"></param>
-        /// <param name="masterScrobbleBackupDirectoryPath"></param>
+        /// <param name="masterScrobbleFilePath">The complete path to the master scrobbler file</param>
+        /// <param name="masterScrobbleBackupDirectoryPath">The complete path to the scrobbler backup directory</param>
         public void BackupScrobblerFile(string masterScrobbleFilePath, string masterScrobbleBackupDirectoryPath)
         {
             string dateStr = DateTime.Now.FormatAs_yyyyMMdd();
@@ -170,9 +169,9 @@ namespace ScrobbleStatsMechanizer
         }
 
         /// <summary>
-        /// TODO: Document this function.
+        /// Clears scrobble-related stats tag (Last Played, Times Finished, Weighted Rating, etc.) in all the specified tagLibFiles.
         /// </summary>
-        /// <param name="tagLibFiles"></param>
+        /// <param name="tagLibFiles">The List of TagLib.Files for which to clear stats</param>
         public void ResetStats(List<TagLib.File> tagLibFiles)
         {
             foreach (var tagLibFile in tagLibFiles)
@@ -191,11 +190,11 @@ namespace ScrobbleStatsMechanizer
 
 
         /// <summary>
-        /// TODO: Document this function.
+        /// Finds the best artist and title match(es) from a collection of possible tag lib files.
         /// </summary>
-        /// <param name="scrobbleStatsForFile"></param>
-        /// <param name="tagLibFiles"></param>
-        /// <returns>Match result</returns>
+        /// <param name="scrobbleStatsForFile">Scrobbler stats connected to a particular artist and tag. The search key.</param>
+        /// <param name="tagLibFiles">The collection of TagLib.File to search</param>
+        /// <returns>Match result, containing the matches files found and the match percent.</returns>
         public ScrobbleStatsToTagLibFileSearchResult FindMatchingTagLibFile(ScrobbleStatsForFile scrobbleStatsForFile, List<TagLib.File> tagLibFiles)
         {
             var tagLibFilesByMatchPercentage = tagLibFiles
@@ -218,8 +217,8 @@ namespace ScrobbleStatsMechanizer
         /// Returns the percentage of characters in the file tags that match characters in the stats.
         /// Requires at least a StartsWith match to return a non-zero result.
         /// </summary>
-        /// <param name="tagLibFile"></param>
-        /// <param name="statInfo"></param>
+        /// <param name="tagLibFile">The TagLib.File to check</param>
+        /// <param name="statInfo">The ScrobbleStatsForFile to compare</param>
         /// <returns>Percentage of match strength. Will return 0 if the match has no possibility of being valid.</returns>
         internal double GetArtistAndTitleMatchStrength(TagLib.File tagLibFile, ScrobbleStatsForFile statInfo)
         {
@@ -242,8 +241,8 @@ namespace ScrobbleStatsMechanizer
         /// <summary>
         /// Returns true if one or more stats were updated in the file
         /// </summary>
-        /// <param name="taglibFile"></param>
-        /// <param name="newStats"></param>
+        /// <param name="taglibFile">The TagLib.File to be updated with stats</param>
+        /// <param name="newStats">The ScrobbleStatsForFile to set the stats to</param>
         /// <returns>True if one or more stats were updated in the file</returns>
         public bool UpdateScrobblerStatsInTagLibFile(TagLib.File taglibFile, ScrobbleStatsForFile newStats)
         {
@@ -264,10 +263,10 @@ namespace ScrobbleStatsMechanizer
         }
 
         /// <summary>
-        /// TODO: Document this function.
+        /// Loads a TagLib.File for each file in the directory at audioCollectionDirectoryPath
         /// </summary>
-        /// <param name="audioCollectionDirectoryPath"></param>
-        /// <returns></returns>
+        /// <param name="audioCollectionDirectoryPath">The complete path to the audio collection directory</param>
+        /// <returns>A list of TagLibFileLoadResult. Each result contains the loaded TagLib.File (if loaded successfully), an error (if applicable), and the name of the original file path.</returns>
         public List<TagLibFileLoadResult> GetTagLibFiles(string audioCollectionDirectoryPath)
         {
             var audioFilePaths = Directory
