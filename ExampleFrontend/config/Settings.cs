@@ -6,12 +6,44 @@ using System.Threading.Tasks;
 
 namespace ScrobbleStatsMechanizer
 {
+    /// <summary>
+    /// For deserializing from a JSON file
+    /// </summary>
     internal class Settings
     {
-        public string VolumeLabel_Mp3Player { get; set; }
-        public string RelativeFilePath_Mp3PlayerScrobbler { get; set; }
-        public string DirectoryPath_ScrobblerBackups { get; set; }
-        public string FilePath_MasterScrobbler { get; set; }
-        public string DirectoryPath_AudioFiles { get; set; }
+        /// <summary>
+        /// The volume label to your PMP drive.
+        /// Used with pmpScrobblerRelativeFilePath to determine the full path to the PMP scrobbler log file.
+        /// </summary>
+        public string pmpDriveVolumeLabel { get; set; }
+
+        /// <summary>
+        /// The relative path from the root of the PMP drive to the scrobbler log file.
+        /// Used with pmpDriveVolumeLabel to determine the full path to the PMP scrobbler log file.
+        /// In the example-settings.json, this will find drive with label of "SANSA CLIP", then the file in the root named ".scrobbler.log"
+        /// </summary>
+        public string pmpScrobblerRelativeFilePath { get; set; }
+
+        /// <summary>
+        /// Where to store the master scrobbler file.
+        /// </summary>
+        public string masterScrobblerFilePath { get; set; }
+
+        /// <summary>
+        /// Where to save backups of the master scrobbler file.
+        /// </summary>
+        public string scrobblerBackupsDirectoryPath { get; set; }
+
+        /// <summary>
+        /// Where your audio collection is stored.
+        /// </summary>
+        public string audioCollectionDirectoryPath { get; set; }
+
+        /// <summary>
+        /// For advanced users only. Not required. 
+        /// After parsing the PMP scrobbler log file, this option determines whether to replace it with a zero-byte file.
+        /// Used only to prevent duplicate entries from being added to the master scrobbler file on subsequent runs.
+        /// </summary>
+        public bool shouldDeletePMPScrobblerFile { get; set; }
     }
 }

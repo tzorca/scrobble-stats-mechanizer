@@ -17,35 +17,35 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         {
             try
             {
-                LoadConfig();
+                LoadSettings();
 
                 var scrobblerTagMarker = new ScrobbleTagMarker();
 
-                PrintMessage("Backing up current scrobbler file...");
+                PrintMessage("Backing up current master scrobbler file...");
                 scrobblerTagMarker.BackupScrobblerFile
                 (
-                    masterScrobbleFilePath: Config.FilePath_MasterScrobbler,
-                    masterScrobbleBackupDirectoryPath: Config.DirectoryPath_ScrobblerBackups
+                    masterScrobbleFilePath: Config.masterScrobblerFilePath,
+                    masterScrobbleBackupDirectoryPath: Config.scrobblerBackupsDirectoryPath
                 );
 
-                PrintMessage("Finding MP3 player scrobbler file path...");
+                PrintMessage("Finding PMP scrobbler file path...");
                 string mp3PlayerScrobbleFilePath = GetPathFromVolumeLabelAndRelativePath
                 (
-                    volumeLabel: Config.VolumeLabel_Mp3Player,
-                    relativePath: Config.RelativeFilePath_Mp3PlayerScrobbler
+                    volumeLabel: Config.pmpDriveVolumeLabel,
+                    relativePath: Config.pmpScrobblerRelativeFilePath
                 );
 
-                PrintMessage("Saving new scrobble data from MP3 player...");
+                PrintMessage("Saving new scrobbler data from PMP...");
                 scrobblerTagMarker.SaveNewScrobbleDataFromMP3Player
                 (
                     pmpScrobbleFilePath: mp3PlayerScrobbleFilePath,
-                    masterScrobbleFilePath: Config.FilePath_MasterScrobbler,
-                    truncateScrobblerFile: true
+                    masterScrobbleFilePath: Config.masterScrobblerFilePath,
+                    truncateScrobblerFile: Config.shouldDeletePMPScrobblerFile
                 );
 
 
                 PrintMessage("Loading tags from audio files...");
-                var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.DirectoryPath_AudioFiles);
+                var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.audioCollectionDirectoryPath);
                 foreach (var loadResult in tagLibFileLoadResults.Where(result => result.Error != null))
                 {
                     string fileNameWithoutExt = Path.GetFileNameWithoutExtension(loadResult.FilePath);
@@ -80,13 +80,10 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
                 }
 
                 PrintMessage("Parsing scrobbler data...");
-                var scrobblerData = scrobblerTagMarker.ParseScrobblerData(Config.FilePath_MasterScrobbler);
+                var scrobblerData = scrobblerTagMarker.ParseScrobblerData(Config.masterScrobblerFilePath);
 
                 PrintMessage("Aggregating scrobbler data...");
                 var scrobblerStatsForFiles = scrobblerTagMarker.AggregateScrobblerData(scrobblerData);
-
-                PrintMessage("Reseting tag stats...");
-                scrobblerTagMarker.ResetStats(tagLibFiles);
 
                 PrintMessage("Matching scrobbler stats with files and updating tag stats");
                 foreach (var scrobbleStatsForFile in scrobblerStatsForFiles)
@@ -148,10 +145,10 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         }
 
 
-        private static void LoadConfig()
+        private static void LoadSettings()
         {
-            PrintMessage("Reading config file...");
-            string configText = System.IO.File.ReadAllText("settings.js");
+            PrintMessage("Reading settings file...");
+            string configText = System.IO.File.ReadAllText("settings.json");
             Config = JsonConvert.DeserializeObject<Settings>(configText);
 
         }
