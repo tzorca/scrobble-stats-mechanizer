@@ -14,6 +14,6 @@
 	// Where to save backups of the master scrobbler file.
 	"scrobblerBackupsDirectoryPath": "D:/ScrobbleFiles/Backup/",
 
-	// Where your audio collection is stored.
-	"audioCollectionDirectoryPath": "D:/Music/"
+	// Where your local audio collection is stored.
+	"localAudioCollectionDirectoryPath": "D:/Music/"
 }

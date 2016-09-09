@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PMPAudioSelector;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,9 +16,19 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
 
         static void Main(string[] args)
         {
+            LoadSettings();
+
+            MarkScrobbleTags();
+
+            // TODO: Separate modes and documentation
+            //SelectAndCopyAudioToPMP();
+        }
+
+
+        private static void MarkScrobbleTags()
+        {
             try
             {
-                LoadSettings();
 
                 var scrobblerTagMarker = new ScrobbleTagMarker();
 
@@ -45,7 +56,7 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
 
 
                 PrintMessage("Loading tags from audio files...");
-                var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.audioCollectionDirectoryPath);
+                var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.localAudioCollectionDirectoryPath);
                 foreach (var loadResult in tagLibFileLoadResults.Where(result => result.Error != null))
                 {
                     string fileNameWithoutExt = Path.GetFileNameWithoutExtension(loadResult.FilePath);
@@ -85,7 +96,8 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
                 PrintMessage("Aggregating scrobbler data...");
                 var scrobblerStatsForFiles = scrobblerTagMarker.AggregateScrobblerData(scrobblerData);
 
-                PrintMessage("Matching scrobbler stats with files and updating tag stats");
+                PrintMessage("Matching scrobbler stats with files and updating tag stats...");
+
                 foreach (var scrobbleStatsForFile in scrobblerStatsForFiles)
                 {
                     try
@@ -130,6 +142,92 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         }
 
 
+        private static void SelectAndCopyAudioToPMP()
+        {
+            try
+            {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+
+                var audioSelector = new AudioSelector();
+
+
+                PrintMessage("Retrieving list of local audio files...");
+                var localAudioFilePaths = new List<string>(Directory.GetFiles(Config.localAudioCollectionDirectoryPath));
+
+                PrintMessage(String.Format("Finding PMP drive by volume name ({0})...", Config.pmpDriveVolumeLabel));
+                var pmpDrive = GetDriveFromVolumeLabel(Config.pmpDriveVolumeLabel);
+
+
+                PrintMessage("Loading audio file tags...");
+                var tagLibFiles = audioSelector.GetTagLibFiles(localAudioFilePaths);
+
+                PrintMessage("Grouping audio files by tag tier...");
+                var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibConditions());
+
+                PrintMessage("Selecting audio files to copy...");
+                var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, PrintMessage);
+
+                PrintMessage("Copying selected audio files to PMP...");
+
+                // Find PMP audio directory
+                var pmpAudioDirectoryPath = Path.Combine(pmpDrive.RootDirectory.FullName, Config.pmpAudioCollectionRelativePath);
+
+                audioSelector.CopyAudioFilesToPMP(selectedAudioFilePaths, pmpAudioDirectoryPath, PrintMessage);
+
+                stopwatch.Stop();
+                PrintMessage(String.Format("Finished in {0} seconds", stopwatch.Elapsed.TotalSeconds));
+                Console.ReadLine();
+
+            }
+            catch (Exception e)
+            {
+                PrintError(e.ToString());
+                Console.ReadLine();
+            }
+
+        }
+
+        /// <summary>
+        /// TODO: Implement defining these in settings file instead.
+        /// </summary>
+        /// <returns></returns>
+        private static List<TagLibCondition> BuildExampleTagLibConditions()
+        {
+            var tagLibTiers = new List<TagLibCondition>();
+
+            // Tier 1: Condition 1: Audio files that haven't been played before
+            // Tier 1: Condition 2: Audio files that have been played 1 to 3 times, have a good rating, and haven't been played for 30 days
+            tagLibTiers.Add(new TagLibCondition(file =>
+                file.GetTimesPlayed() < 1 ||
+                (
+                    file.GetTimesPlayed() >= 1 && file.GetTimesPlayed() <= 3 &&
+                    file.RatingIsGoodOrBetter() &&
+                    file.GetLastPlayed().HasValue && file.DaysSinceLastPlayed() >= 30
+                )
+            ));
+
+            // Tier 2: Audio files with a good rating that hasn't been played for 30 days
+            tagLibTiers.Add(new TagLibCondition(file =>
+                file.RatingIsGoodOrBetter() &&
+                file.GetLastPlayed().HasValue && file.DaysSinceLastPlayed() > 30
+            ));
+
+
+            // Tier 3: Audio files with a good rating
+            tagLibTiers.Add(new TagLibCondition(file =>
+                file.RatingIsGoodOrBetter()
+            ));
+
+            // Tier 4: Everything else
+            tagLibTiers.Add(new TagLibCondition(file => true));
+
+            return tagLibTiers;
+        }
+
+
+
         private static void PrintError(string message)
         {
             PrintMessage("Error: " + message);
@@ -150,14 +248,12 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             PrintMessage("Reading settings file...");
             string configText = System.IO.File.ReadAllText("settings.json");
             Config = JsonConvert.DeserializeObject<Settings>(configText);
-
         }
 
-        public static string GetPathFromVolumeLabelAndRelativePath(string volumeLabel, string relativePath)
+
+        private static DriveInfo GetDriveFromVolumeLabel(string volumeLabel)
         {
             var driveInfoList = DriveInfo.GetDrives();
-
-            DirectoryInfo driveDirectory = null;
             foreach (var driveInfo in driveInfoList)
             {
                 try
@@ -170,8 +266,7 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
 
                     if (driveInfo.VolumeLabel.ToLower() == volumeLabel.ToLower())
                     {
-                        driveDirectory = driveInfo.RootDirectory;
-                        break;
+                        return driveInfo;
                     }
                 }
                 catch (Exception e)
@@ -180,13 +275,14 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
                 }
             }
 
-            if (driveDirectory == null)
-            {
-                throw new DriveNotFoundException("Could not find drive with volume label " + volumeLabel);
-            }
+            throw new DriveNotFoundException("Could not find drive with volume label " + volumeLabel);
 
-            string resultPath = Path.Combine(driveDirectory.FullName, relativePath);
-            return resultPath;
+        }
+
+        private static string GetPathFromVolumeLabelAndRelativePath(string volumeLabel, string relativePath)
+        {
+            DriveInfo drive = GetDriveFromVolumeLabel(volumeLabel);
+            return Path.Combine(drive.RootDirectory.FullName, relativePath);
         }
 
     }

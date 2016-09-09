@@ -4,15 +4,14 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{DB8CB924-D726-4CE5-952A-72E8E5961726}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{A73B3A49-0641-41C8-84E4-04DE46CABDA5}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ScrobbleStatsMechanizer.ExampleFrontend</RootNamespace>
-    <AssemblyName>ExampleFrontend</AssemblyName>
+    <RootNamespace>PMPAudioSelector</RootNamespace>
+    <AssemblyName>PMPAudioSelector</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -32,6 +31,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -56,26 +58,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="config\Settings.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="model\TagLibCondition.cs" />
+    <Compile Include="utilities\MiscellaneousExtensions.cs" />
+    <Compile Include="model\TagCustomKey.cs" />
+    <Compile Include="AudioSelector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="utilities\TagLibScrobbleStatsExtensions.cs" />
+    <Compile Include="utilities\MiscExtensions.cs" />
+    <Compile Include="utilities\TagLibExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PMPAudioSelector\PMPAudioSelector.csproj">
-      <Project>{a73b3a49-0641-41c8-84e4-04de46cabda5}</Project>
-      <Name>PMPAudioSelector</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ScrobbleTagMarker\ScrobbleTagMarker.csproj">
-      <Project>{e6fc7c33-0544-462e-853b-dc798a992f50}</Project>
-      <Name>ScrobbleTagMarker</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

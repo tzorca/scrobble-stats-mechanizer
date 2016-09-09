@@ -36,11 +36,12 @@ You can use the example frontend by building the solution and creating a setting
 	// Where to save backups of the master scrobbler file.
 	"scrobblerBackupsDirectoryPath": "D:/ScrobbleFiles/Backup/",
 
-	// Where your audio collection is stored.
-	"audioCollectionDirectoryPath": "D:/Music/"
+	// Where your local audio collection is stored.
+	"localAudioCollectionDirectoryPath": "D:/Music/"
 }
 ```
 
 
 ### Future plans
-* Include another program that can select and copy audio files using customizable rules based on the listening statistics.
+* Write documentation and usage instructions for PMP Audio Selector. Add mode selection to example frontend.
+

@@ -37,7 +37,17 @@ namespace ScrobbleStatsMechanizer
         /// <summary>
         /// Where your audio collection is stored.
         /// </summary>
-        public string audioCollectionDirectoryPath { get; set; }
+        public string localAudioCollectionDirectoryPath { get; set; }
+
+        /// <summary>
+        /// TODO: Documentation
+        /// </summary>
+        public long pmpReservedMegabytes { get; internal set; }
+
+        /// <summary>
+        /// TODO: Documentation
+        /// </summary>
+        public string pmpAudioCollectionRelativePath { get; internal set; }
 
         /// <summary>
         /// For advanced users only. Not required. 
