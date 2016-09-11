@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizerCommon
 {
-    internal enum TagCustomKey
+    public enum TagCustomKey
     {
         WeightedRating, TimesSkipped, TimesFinished, LastPlayed, FirstPlayed
     }

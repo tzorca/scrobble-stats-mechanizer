@@ -5,10 +5,30 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PMPAudioSelector
+namespace ScrobbleStatsMechanizerCommon
 {
     public static class Utilities
     {
+        /// <summary>
+        /// Sourced from http://stackoverflow.com/a/24316350
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="f"></param>
+        /// <returns></returns>
+        public static Func<T, bool> Not<T>(this Func<T, bool> f)
+        {
+            return x => !f(x);
+        }
+        public static string FormatAs_yyyyMMdd(this DateTime dateTime)
+        {
+            return dateTime.ToString("yyyyMMdd");
+        }
+        public static List<string> SplitIntoLines(this string input)
+        {
+            return (input ?? "")
+                .Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None)
+                .ToList();
+        }
         public static T RemoveRandomElement<T>(this List<T> list, Random random)
         {
             var randomIndex = random.Next(list.Count);

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizerCommon
 {
-    internal class DateUtilities
+    public class DateUtilities
     {
         /// <summary>
         /// Sourced from http://stackoverflow.com/a/250400

@@ -59,20 +59,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="model\TagCustomKey.cs" />
-    <Compile Include="model\ScrobbleStatsToTagLibFileSearchResult.cs" />
-    <Compile Include="model\TagLibFileLoadResult.cs" />
-    <Compile Include="utilities\MiscExtensions.cs" />
-    <Compile Include="utilities\DateUtilities.cs" />
-    <Compile Include="model\ScrobbleStatsForFile.cs" />
-    <Compile Include="model\ScrobbleRecord.cs" />
     <Compile Include="ScrobbleTagMarker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="utilities\TagLibExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScrobbleStatsMechanizerCommon\ScrobbleStatsMechanizerCommon.csproj">
+      <Project>{1a6ce8f6-4150-4e9e-b958-7f6cfe0ca954}</Project>
+      <Name>ScrobbleStatsMechanizerCommon</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

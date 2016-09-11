@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizerCommon
 {
     public class ScrobbleStatsForFile
     {
@@ -28,7 +28,7 @@ namespace ScrobbleStatsMechanizer
         public uint TimesSkipped { get; private set; }
         public DateTime LastPlayed { get; private set; }
         public DateTime FirstPlayed { get; private set; }
-        public string WeightedRating { get; internal set; }
+        public string WeightedRating { get; set; }
 
         public override string ToString()
         {

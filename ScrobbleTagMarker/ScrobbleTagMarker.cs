@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using ScrobbleStatsMechanizerCommon;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using TagLib.Id3v2;
 using System.Threading.Tasks;
 using TagLib;
+using TagLib.Id3v2;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizerCommon
 {
-    internal static class TagLibExtensions
+    public static class TagLibExtensions
     {
         /// <summary>
         /// Returns true if the new value was different than the previous value
@@ -49,7 +49,6 @@ namespace ScrobbleStatsMechanizer
 
             // Set the value
             userTextInformationFrame.Text = value;
-
         }
 
         public static string[] GetUserTextInformationFrameValue(this TagLib.File tagLibFile, string key)
@@ -76,6 +75,14 @@ namespace ScrobbleStatsMechanizer
         {
             return (TagLib.Id3v2.Tag)tagLibFile.GetTag(TagTypes.Id3v2, true);
         }
+
+
+
+
+
+
+
+
 
         public static bool HasArtist(this TagLib.Tag tag)
         {
@@ -116,5 +123,6 @@ namespace ScrobbleStatsMechanizer
 
             return true;
         }
+
     }
 }

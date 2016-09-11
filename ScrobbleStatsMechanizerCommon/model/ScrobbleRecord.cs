@@ -1,15 +1,16 @@
-﻿using System;
+﻿using ScrobbleStatsMechanizerCommon;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizerCommon
 {
     public class ScrobbleRecord
     {
-        internal static ScrobbleRecord FromLine(string inputLine)
+        public static ScrobbleRecord FromLine(string inputLine)
         {
             var scrobbleRecord = new ScrobbleRecord();
             var components = inputLine.Split('\t');
@@ -45,7 +46,7 @@ namespace ScrobbleStatsMechanizer
             return Album + " - " + Author;
         }
 
-        internal static bool IsValidLine(string line)
+        public static bool IsValidLine(string line)
         {
             return line.Count(c => c == '\t') >= 7;
         }

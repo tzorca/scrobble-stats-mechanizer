@@ -70,6 +70,10 @@
       <Project>{a73b3a49-0641-41c8-84e4-04de46cabda5}</Project>
       <Name>PMPAudioSelector</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ScrobbleStatsMechanizerCommon\ScrobbleStatsMechanizerCommon.csproj">
+      <Project>{1a6ce8f6-4150-4e9e-b958-7f6cfe0ca954}</Project>
+      <Name>ScrobbleStatsMechanizerCommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ScrobbleTagMarker\ScrobbleTagMarker.csproj">
       <Project>{e6fc7c33-0544-462e-853b-dc798a992f50}</Project>
       <Name>ScrobbleTagMarker</Name>
