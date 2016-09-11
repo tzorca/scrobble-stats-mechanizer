@@ -16,176 +16,190 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
 
         static void Main(string[] args)
         {
-            LoadSettings();
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
 
-            MarkScrobbleTags();
-
-            // TODO: Separate modes and documentation
-            //SelectAndCopyAudioToPMP();
-        }
-
-
-        private static void MarkScrobbleTags()
-        {
             try
             {
+                LoadSettings();
 
-                var scrobblerTagMarker = new ScrobbleTagMarker();
-
-                PrintMessage("Backing up current master scrobbler file...");
-                scrobblerTagMarker.BackupScrobblerFile
-                (
-                    masterScrobbleFilePath: Config.masterScrobblerFilePath,
-                    masterScrobbleBackupDirectoryPath: Config.scrobblerBackupsDirectoryPath
-                );
-
-                PrintMessage("Finding PMP scrobbler file path...");
-                string mp3PlayerScrobbleFilePath = GetPathFromVolumeLabelAndRelativePath
-                (
-                    volumeLabel: Config.pmpDriveVolumeLabel,
-                    relativePath: Config.pmpScrobblerRelativeFilePath
-                );
-
-                PrintMessage("Saving new scrobbler data from PMP...");
-                scrobblerTagMarker.SaveNewScrobbleDataFromMP3Player
-                (
-                    pmpScrobbleFilePath: mp3PlayerScrobbleFilePath,
-                    masterScrobbleFilePath: Config.masterScrobblerFilePath,
-                    truncateScrobblerFile: Config.shouldDeletePMPScrobblerFile
-                );
-
-
-                PrintMessage("Loading tags from audio files...");
-                var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.localAudioCollectionDirectoryPath);
-                foreach (var loadResult in tagLibFileLoadResults.Where(result => result.Error != null))
+                if (args.Length == 0)
                 {
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(loadResult.FilePath);
-                    PrintError("Error loading tags for " + fileNameWithoutExt + ": " + loadResult.Error.ToString());
-                }
-                var tagLibFiles = tagLibFileLoadResults
-                    .Select(result => result.TagLibFile)
-                    .Where(tagLibFile => tagLibFile != null).ToList();
-
-
-                foreach (var tagLibFile in tagLibFiles)
-                {
-                    string filenameWithoutExt = "";
-                    try
-                    {
-                        filenameWithoutExt = Path.GetFileNameWithoutExtension(tagLibFile.Name);
-
-                        var tagsSaved = scrobblerTagMarker.InitializeArtistAndTitleTags(tagLibFile);
-
-                        if (tagsSaved)
-                        {
-                            PrintMessage(String.Format("Initialized artist and title for {0}",
-                                filenameWithoutExt));
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        PrintError(String.Format("Error initializing tag values for {0}: {1}",
-                            filenameWithoutExt, e.Message));
-                        PrintMessage("");
-                    }
+                    // If no arguments provided, default to ScrobbleTagMarkerThenPMPAudioSelector mode
+                    args = new string[] { ProgramMode.ScrobbleTagMarkerThenPMPAudioSelector.ToString() };
                 }
 
-                PrintMessage("Parsing scrobbler data...");
-                var scrobblerData = scrobblerTagMarker.ParseScrobblerData(Config.masterScrobblerFilePath);
-
-                PrintMessage("Aggregating scrobbler data...");
-                var scrobblerStatsForFiles = scrobblerTagMarker.AggregateScrobblerData(scrobblerData);
-
-                PrintMessage("Matching scrobbler stats with files and updating tag stats...");
-
-                foreach (var scrobbleStatsForFile in scrobblerStatsForFiles)
+                ProgramMode mode;
+                if (!Enum.TryParse(args[0], out mode))
                 {
-                    try
-                    {
-                        var searchResult = scrobblerTagMarker.FindMatchingTagLibFile(scrobbleStatsForFile, tagLibFiles);
-
-                        if (searchResult.MatchPercent == 0 ||
-                            searchResult.MatchingFiles.Count == 0)
-                        {
-                            // No good matches
-                            continue;
-                        }
-
-                        TagLib.File taglibFile = searchResult.MatchingFiles.First();
-
-                        if (searchResult.MatchingFiles.Count > 1)
-                        {
-                            // Non-fatal error, but will want to warn about this
-                            PrintError(String.Format("More than one {0:0.0}% match for {1}",
-                                searchResult.MatchPercent * 100, scrobbleStatsForFile.ToString()));
-                        }
-
-                        scrobblerTagMarker.UpdateScrobblerStatsInTagLibFile(taglibFile, scrobbleStatsForFile);
-                    }
-                    catch (Exception e)
-                    {
-                        PrintError(String.Format("Error matching or updating scrobble tags for {0}: {1}",
-                            scrobbleStatsForFile.ToString(), e.ToString()));
-                    }
+                    // If an invalid mode is specified, list the mode options
+                    var validProgramModes = Enum.GetNames(typeof(ProgramMode));
+                    PrintError("Choose a program mode from the following list: " + string.Join(", ", validProgramModes));
+                    return;
                 }
 
+                RunMode(mode);
 
-                Console.WriteLine("Finished.");
-
+                stopwatch.Stop();
+                PrintMessage(String.Format("Finished in {0} seconds", stopwatch.Elapsed.TotalSeconds));
+                Console.ReadLine();
             }
             catch (Exception e)
             {
                 PrintError(e.ToString());
+                Console.ReadLine();
+            }
+        }
+
+        private static void RunMode(ProgramMode mode)
+        {
+            switch (mode)
+            {
+                case ProgramMode.ScrobbleTagMarker:
+                    MarkScrobbleTags();
+                    break;
+
+                case ProgramMode.PMPAudioSelector:
+                    SelectAndCopyAudioToPMP();
+                    break;
+
+                case ProgramMode.ScrobbleTagMarkerThenPMPAudioSelector:
+                    MarkScrobbleTags();
+                    SelectAndCopyAudioToPMP();
+                    break;
+            }
+        }
+
+        private static void MarkScrobbleTags()
+        {
+            var scrobblerTagMarker = new ScrobbleTagMarker();
+
+            PrintMessage("Backing up current master scrobbler file...");
+            scrobblerTagMarker.BackupScrobblerFile
+            (
+                masterScrobbleFilePath: Config.masterScrobblerFilePath,
+                masterScrobbleBackupDirectoryPath: Config.scrobblerBackupsDirectoryPath
+            );
+
+            PrintMessage("Finding PMP scrobbler file path...");
+            string mp3PlayerScrobbleFilePath = GetPathFromVolumeLabelAndRelativePath
+            (
+                volumeLabel: Config.pmpDriveVolumeLabel,
+                relativePath: Config.pmpScrobblerRelativeFilePath
+            );
+
+            PrintMessage("Saving new scrobbler data from PMP...");
+            scrobblerTagMarker.SaveNewScrobbleDataFromMP3Player
+            (
+                pmpScrobbleFilePath: mp3PlayerScrobbleFilePath,
+                masterScrobbleFilePath: Config.masterScrobblerFilePath,
+                truncateScrobblerFile: Config.shouldDeletePMPScrobblerFile
+            );
+
+
+            PrintMessage("Loading tags from audio files...");
+            var tagLibFileLoadResults = scrobblerTagMarker.GetTagLibFiles(audioCollectionDirectoryPath: Config.localAudioCollectionDirectoryPath);
+            foreach (var loadResult in tagLibFileLoadResults.Where(result => result.Error != null))
+            {
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(loadResult.FilePath);
+                PrintError("Error loading tags for " + fileNameWithoutExt + ": " + loadResult.Error.ToString());
+            }
+            var tagLibFiles = tagLibFileLoadResults
+                .Select(result => result.TagLibFile)
+                .Where(tagLibFile => tagLibFile != null).ToList();
+
+
+            foreach (var tagLibFile in tagLibFiles)
+            {
+                string filenameWithoutExt = "";
+                try
+                {
+                    filenameWithoutExt = Path.GetFileNameWithoutExtension(tagLibFile.Name);
+
+                    var tagsSaved = scrobblerTagMarker.InitializeArtistAndTitleTags(tagLibFile);
+
+                    if (tagsSaved)
+                    {
+                        PrintMessage(String.Format("Initialized artist and title for {0}",
+                            filenameWithoutExt));
+                    }
+                }
+                catch (Exception e)
+                {
+                    PrintError(String.Format("Error initializing tag values for {0}: {1}",
+                        filenameWithoutExt, e.Message));
+                    PrintMessage("");
+                }
             }
 
-            Console.ReadLine();
+            PrintMessage("Parsing scrobbler data...");
+            var scrobblerData = scrobblerTagMarker.ParseScrobblerData(Config.masterScrobblerFilePath);
+
+            PrintMessage("Aggregating scrobbler data...");
+            var scrobblerStatsForFiles = scrobblerTagMarker.AggregateScrobblerData(scrobblerData);
+
+            PrintMessage("Matching scrobbler stats with files and updating tag stats...");
+
+            foreach (var scrobbleStatsForFile in scrobblerStatsForFiles)
+            {
+                try
+                {
+                    var searchResult = scrobblerTagMarker.FindMatchingTagLibFile(scrobbleStatsForFile, tagLibFiles);
+
+                    if (searchResult.MatchPercent == 0 ||
+                        searchResult.MatchingFiles.Count == 0)
+                    {
+                        // No good matches
+                        continue;
+                    }
+
+                    TagLib.File taglibFile = searchResult.MatchingFiles.First();
+
+                    if (searchResult.MatchingFiles.Count > 1)
+                    {
+                        // Non-fatal error, but will want to warn about this
+                        PrintError(String.Format("More than one {0:0.0}% match for {1}",
+                            searchResult.MatchPercent * 100, scrobbleStatsForFile.ToString()));
+                    }
+
+                    scrobblerTagMarker.UpdateScrobblerStatsInTagLibFile(taglibFile, scrobbleStatsForFile);
+                }
+                catch (Exception e)
+                {
+                    PrintError(String.Format("Error matching or updating scrobble tags for {0}: {1}",
+                        scrobbleStatsForFile.ToString(), e.ToString()));
+                }
+            }
         }
 
 
         private static void SelectAndCopyAudioToPMP()
         {
-            try
-            {
-                var stopwatch = new Stopwatch();
-                stopwatch.Start();
+            var audioSelector = new AudioSelector();
 
 
-                var audioSelector = new AudioSelector();
+            PrintMessage("Retrieving list of local audio files...");
+            var localAudioFilePaths = new List<string>(Directory.GetFiles(Config.localAudioCollectionDirectoryPath));
+
+            PrintMessage(String.Format("Finding PMP drive by volume name ({0})...", Config.pmpDriveVolumeLabel));
+            var pmpDrive = GetDriveFromVolumeLabel(Config.pmpDriveVolumeLabel);
 
 
-                PrintMessage("Retrieving list of local audio files...");
-                var localAudioFilePaths = new List<string>(Directory.GetFiles(Config.localAudioCollectionDirectoryPath));
+            PrintMessage("Loading audio file tags...");
+            var tagLibFiles = audioSelector.GetTagLibFiles(localAudioFilePaths);
 
-                PrintMessage(String.Format("Finding PMP drive by volume name ({0})...", Config.pmpDriveVolumeLabel));
-                var pmpDrive = GetDriveFromVolumeLabel(Config.pmpDriveVolumeLabel);
+            PrintMessage("Grouping audio files by tag tier...");
+            var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibConditions());
 
+            PrintMessage("Selecting audio files to copy...");
+            var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, PrintMessage);
 
-                PrintMessage("Loading audio file tags...");
-                var tagLibFiles = audioSelector.GetTagLibFiles(localAudioFilePaths);
+            PrintMessage("Copying selected audio files to PMP...");
 
-                PrintMessage("Grouping audio files by tag tier...");
-                var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibConditions());
+            // Find PMP audio directory
+            var pmpAudioDirectoryPath = Path.Combine(pmpDrive.RootDirectory.FullName, Config.pmpAudioCollectionRelativePath);
 
-                PrintMessage("Selecting audio files to copy...");
-                var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, PrintMessage);
-
-                PrintMessage("Copying selected audio files to PMP...");
-
-                // Find PMP audio directory
-                var pmpAudioDirectoryPath = Path.Combine(pmpDrive.RootDirectory.FullName, Config.pmpAudioCollectionRelativePath);
-
-                audioSelector.CopyAudioFilesToPMP(selectedAudioFilePaths, pmpAudioDirectoryPath, PrintMessage);
-
-                stopwatch.Stop();
-                PrintMessage(String.Format("Finished in {0} seconds", stopwatch.Elapsed.TotalSeconds));
-                Console.ReadLine();
-
-            }
-            catch (Exception e)
-            {
-                PrintError(e.ToString());
-                Console.ReadLine();
-            }
+            audioSelector.CopyAudioFilesToPMP(selectedAudioFilePaths, pmpAudioDirectoryPath, PrintMessage);
 
         }
 

@@ -42,12 +42,12 @@ namespace ScrobbleStatsMechanizer
         /// <summary>
         /// TODO: Documentation
         /// </summary>
-        public long pmpReservedMegabytes { get; internal set; }
+        public long pmpReservedMegabytes { get; set; }
 
         /// <summary>
         /// TODO: Documentation
         /// </summary>
-        public string pmpAudioCollectionRelativePath { get; internal set; }
+        public string pmpAudioCollectionRelativePath { get; set; }
 
         /// <summary>
         /// For advanced users only. Not required. 
