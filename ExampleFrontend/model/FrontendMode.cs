@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizer.ExampleFrontend
 {
-    public enum ProgramMode
+    public enum FrontendMode
     {
         ScrobbleTagMarker,
         PMPAudioSelector,
-        ScrobbleTagMarkerThenPMPAudioSelector
+        ScrobbleTagMarkerThenPMPAudioSelector,
+        Unknown
     }
 }

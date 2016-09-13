@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ScrobbleStatsMechanizer
+namespace ScrobbleStatsMechanizer.ExampleFrontend
 {
     /// <summary>
     /// For deserializing from a JSON file
