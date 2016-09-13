@@ -55,5 +55,10 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         /// Used only to prevent duplicate entries from being added to the master scrobbler file on subsequent runs.
         /// </summary>
         public bool shouldDeletePMPScrobblerFile { get; set; }
+
+        /// <summary>
+        /// TODO: Documentation
+        /// </summary>
+        public int? pmpMaxAudioFilesToCopy { get; set; }
     }
 }

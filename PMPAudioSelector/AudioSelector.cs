@@ -63,7 +63,7 @@ namespace PMPAudioSelector
 
 
         private const long BYTES_IN_MEGABYTE = 1024 * 1024;
-        public List<string> SelectAudioFilesToCopy(List<List<TagLib.File>> tagLibFilesByTagTier, DriveInfo pmpDrive, long reservedMegabytes, Action<string> messagePrintAction = null)
+        public List<string> SelectAudioFilesToCopy(List<List<TagLib.File>> tagLibFilesByTagTier, DriveInfo pmpDrive, long reservedMegabytes, int? maxFiles = null, Action<string> messagePrintAction = null)
         {
             var bytesAvailableOnPMP = pmpDrive.AvailableFreeSpace;
 
@@ -78,7 +78,7 @@ namespace PMPAudioSelector
             var rnd = new Random();
             int tierIdx = 0;
 
-            while (remainingBytes > 0)
+            while (remainingBytes > 0 || audioFilesToCopy.Count() >= maxFiles)
             {
                 if (tagLibFilesByTagTier.Count <= tierIdx)
                 {
@@ -102,6 +102,12 @@ namespace PMPAudioSelector
                         break;
                     }
 
+                    if (audioFilesToCopy.Count >= maxFiles)
+                    {
+                        // This file would make too many files. Break out of the loop.
+                        break;
+                    }
+
                     audioFilesToCopy.Add(randomTagLibFile.Name);
                     remainingBytes -= bytesInRandomAudioFile;
                     numberOfTagFilesSelectedFromTier += 1;
@@ -111,12 +117,13 @@ namespace PMPAudioSelector
                 {
                     messagePrintAction(numberOfTagFilesSelectedFromTier + " audio files selected from tier " + (tierIdx + 1));
                 }
+
                 tierIdx++;
             }
 
             if (audioFilesToCopy.Count == 0)
             {
-                throw new IOException("There wasn't enough space to copy any files.");
+                throw new IOException("No files were copied.");
             }
 
             return audioFilesToCopy;

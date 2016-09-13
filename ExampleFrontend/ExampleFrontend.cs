@@ -23,10 +23,6 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         }
 
 
-        internal void PrintError(string message)
-        {
-            PrintMessage("Error: " + message);
-        }
 
         public void RunMode(FrontendMode mode)
         {
@@ -71,13 +67,19 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             }
         }
 
-        internal void PrintMessage(string msg)
+        public void PrintMessage(string msg)
         {
             // Remove BELL characters (cause beep)
             msg = msg.Replace("•", "");
 
             Debug.WriteLine(msg);
             Console.Out.WriteLine(msg);
+        }
+
+
+        public void PrintError(string message)
+        {
+            PrintMessage("Error: " + message);
         }
         public DriveInfo GetDriveFromVolumeLabel(string volumeLabel)
         {
@@ -236,7 +238,7 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibConditions());
 
             PrintMessage("Selecting audio files to copy...");
-            var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, PrintMessage);
+            var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, Config.pmpMaxAudioFilesToCopy, PrintMessage);
 
             PrintMessage("Copying selected audio files to PMP...");
 
@@ -248,7 +250,7 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         }
 
 
-        internal List<TagLibCondition> BuildExampleTagLibConditions()
+        public virtual List<TagLibCondition> BuildExampleTagLibConditions()
         {
             var tagLibTiers = new List<TagLibCondition>();
 
