@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace ScrobbleStatsMechanizerCommon
 {
-    public class TagLibCondition
+    public class TagLibTierCondition
     {
-        public TagLibCondition(Func<TagLib.File, bool> predicate)
+        public TagLibTierCondition(Func<TagLib.File, bool> predicate)
         {
             this.Predicate = predicate;
         }

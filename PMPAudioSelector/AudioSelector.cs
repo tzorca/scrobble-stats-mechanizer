@@ -13,36 +13,46 @@ namespace PMPAudioSelector
 {
     public class AudioSelector
     {
+        private const long BYTES_IN_MEGABYTE = 1024 * 1024;
 
-        public List<TagLib.File> GetTagLibFiles(List<string> localAudioFilePaths)
+        /// <summary>
+        /// Load Tag Lib File for each file path in audioFilePaths
+        /// </summary>
+        /// <param name="audioFilePaths">The full paths to the audio files</param>
+        /// <returns>A list of Tag Lib Files for the specified audio files</returns>
+        public List<TagLib.File> GetTagLibFiles(List<string> audioFilePaths)
         {
-            return localAudioFilePaths.Select(filePath => TagLib.File.Create(filePath)).ToList();
+            return audioFilePaths.Select(filePath => TagLib.File.Create(filePath)).ToList();
         }
 
-        public void CopyAudioFilesToPMP(List<string> selectedAudioFiles, string pmpAudioDirectoryPath, Action<string> messagePrintAction = null)
+        /// <summary>
+        /// Copies sourceAudioFilePaths into destinationDirectoryPath, preserving file names. 
+        /// </summary>
+        /// <param name="sourceFilePaths">The full paths of the files to be copied</param>
+        /// <param name="destinationDirectoryPath">The directory where the files will be copied to</param>
+        /// <param name="messagePrintAction">The action to run when a status message needs to be printed</param>
+        public void CopyFiles(List<string> sourceFilePaths, string destinationDirectoryPath, Action<string> messagePrintAction = null)
         {
-
-
-            // Create all directories and subdirectories for the PMP audio directory path unless they already exist.
-            Directory.CreateDirectory(pmpAudioDirectoryPath);
+            // Create all directories and subdirectories for the destination path unless they already exist.
+            Directory.CreateDirectory(destinationDirectoryPath);
 
             // Copy files
-            for (var index = 0; index < selectedAudioFiles.Count; index++)
+            for (var index = 0; index < sourceFilePaths.Count; index++)
             {
                 // Calculate percentage completion for copying
-                var percentComplete = index / (double)selectedAudioFiles.Count;
+                var percentComplete = index / (double)sourceFilePaths.Count;
 
-                var localFilePath = selectedAudioFiles[index];
+                var localFilePath = sourceFilePaths[index];
                 string fileName = Path.GetFileName(localFilePath);
                 string fileNameWithoutExt = Path.GetFileNameWithoutExtension(localFilePath);
 
 
-                // Determine the full path of the file as it would be on the PMP
-                var pmpFilePath = Path.Combine(pmpAudioDirectoryPath, fileName);
+                // Determine the full path of the file as it would be in the destination directory
+                var destFilePath = Path.Combine(destinationDirectoryPath, fileName);
 
-                if (System.IO.File.Exists(pmpFilePath))
+                if (System.IO.File.Exists(destFilePath))
                 {
-                    // The file already exists in the PMP audio directory. No need to copy it.
+                    // The file already exists in the destination directory. No need to copy it.
                     if (messagePrintAction != null)
                     {
                         messagePrintAction(String.Format("{0:P2} | {1} already exists.", percentComplete, fileNameWithoutExt));
@@ -55,22 +65,29 @@ namespace PMPAudioSelector
                     messagePrintAction(String.Format("{0:P2} | Copying {1}...", percentComplete, fileNameWithoutExt));
                 }
 
-                // Copy the file from local to PMP
-                System.IO.File.Copy(sourceFileName: localFilePath, destFileName: pmpFilePath);
+                // Copy the source file to the destination directory
+                System.IO.File.Copy(sourceFileName: localFilePath, destFileName: destFilePath);
 
             }
         }
 
-
-        private const long BYTES_IN_MEGABYTE = 1024 * 1024;
-        public List<string> SelectAudioFilesToCopy(List<List<TagLib.File>> tagLibFilesByTagTier, DriveInfo pmpDrive, long reservedMegabytes, int? maxFiles = null, Action<string> messagePrintAction = null)
+        /// <summary>
+        /// Given specified constraints, selects a list of audio files to be copied.
+        /// </summary>
+        /// <param name="tagLibFilesByTagTier">A list of prioritized tiers, where each tier has a list of TagLib files for that tier</param>
+        /// <param name="destinationDrive">The drive where the files are to be copied</param>
+        /// <param name="reservedMegabytes">The number of megabytes to leave free on the destination drive</param>
+        /// <param name="maxFiles">The most files to copy at one time</param>
+        /// <param name="messagePrintAction">The action to run when a status message needs to be printed</param>
+        /// <returns>The resulting list of selected audio files</returns>
+        public List<string> SelectAudioFilesUsingConstraints(List<List<TagLib.File>> tagLibFilesByTagTier, DriveInfo destinationDrive, long reservedMegabytes, int? maxFiles = null, Action<string> messagePrintAction = null)
         {
-            var bytesAvailableOnPMP = pmpDrive.AvailableFreeSpace;
+            var bytesAvailableAtDestination = destinationDrive.AvailableFreeSpace;
 
-            var remainingBytes = bytesAvailableOnPMP - reservedMegabytes * BYTES_IN_MEGABYTE;
+            var remainingBytes = bytesAvailableAtDestination - reservedMegabytes * BYTES_IN_MEGABYTE;
             if (remainingBytes < 0)
             {
-                throw new IOException("Not enough space on PMP to copy audio.");
+                throw new IOException("Not enough space on destination drive to copy audio.");
             }
 
             var audioFilesToCopy = new List<string>();
@@ -91,7 +108,6 @@ namespace PMPAudioSelector
 
                 while (remainingTagLibFiles.Count > 0)
                 {
-
                     var randomTagLibFile = remainingTagLibFiles.RemoveRandomElement(rnd);
 
                     var bytesInRandomAudioFile = new FileInfo(randomTagLibFile.Name).Length;
@@ -123,30 +139,33 @@ namespace PMPAudioSelector
 
             if (audioFilesToCopy.Count == 0)
             {
-                throw new IOException("No files were copied.");
+                throw new IOException("No files were selected to be copied.");
             }
 
             return audioFilesToCopy;
         }
 
 
-
-        public List<List<TagLib.File>> GroupTagLibFilesByTagTier(List<TagLib.File> tagLibAudioFiles, List<TagLibCondition> tagLibConditions)
+        /// <summary>
+        /// Groups audio files into multiple tiers based on specified TagLib tier conditions. When conditions overlap, tiers earlier in the list have precedence over tiers later in the list. Each audio file will be added to a
+        /// </summary>
+        /// <param name="tagLibAudioFiles">The TagLib audio files to group</param>
+        /// <param name="tagLibTierConditions">The TagLib Tier conditions used for grouping.</param>
+        /// <returns>A list of tiers, with each tier containing a list of qualifying audio files.</returns>
+        public List<List<TagLib.File>> GroupTagLibFilesByTagTier(List<TagLib.File> tagLibAudioFiles, List<TagLibTierCondition> tagLibTierConditions)
         {
             var tagLibFilesByTagTier = new List<List<TagLib.File>>();
 
             var remainingFiles = new List<TagLib.File>(tagLibAudioFiles);
 
-            for (int idx = 0; idx < tagLibConditions.Count; idx++)
+            for (int idx = 0; idx < tagLibTierConditions.Count; idx++)
             {
-                var tagLibCondition = tagLibConditions[idx];
+                var tagLibCondition = tagLibTierConditions[idx];
                 tagLibFilesByTagTier.Add(remainingFiles.Where(tagLibCondition.Predicate).ToList());
                 remainingFiles = remainingFiles.Where(tagLibCondition.Predicate.Not()).ToList();
             }
 
             return tagLibFilesByTagTier;
         }
-
-
     }
 }

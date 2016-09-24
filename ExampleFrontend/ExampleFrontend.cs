@@ -22,8 +22,6 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             Config = JsonConvert.DeserializeObject<Settings>(configText);
         }
 
-
-
         public void RunMode(FrontendMode mode)
         {
             switch (mode)
@@ -40,10 +38,12 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
                     MarkScrobbleTags();
                     SelectAndCopyAudioToPMP();
                     break;
+
                 default:
                     break;
             }
         }
+
         public FrontendMode DetermineMode(string[] args)
         {
 
@@ -81,6 +81,7 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
         {
             PrintMessage("Error: " + message);
         }
+
         public DriveInfo GetDriveFromVolumeLabel(string volumeLabel)
         {
             var driveInfoList = DriveInfo.GetDrives();
@@ -230,33 +231,35 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             PrintMessage(String.Format("Finding PMP drive by volume name ({0})...", Config.pmpDriveVolumeLabel));
             var pmpDrive = GetDriveFromVolumeLabel(Config.pmpDriveVolumeLabel);
 
-
             PrintMessage("Loading audio file tags...");
             var tagLibFiles = audioSelector.GetTagLibFiles(localAudioFilePaths);
 
             PrintMessage("Grouping audio files by tag tier...");
-            var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibConditions());
+            var tagLibFilesByTagTier = audioSelector.GroupTagLibFilesByTagTier(tagLibFiles, BuildExampleTagLibTierConditions());
 
             PrintMessage("Selecting audio files to copy...");
-            var selectedAudioFilePaths = audioSelector.SelectAudioFilesToCopy(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, Config.pmpMaxAudioFilesToCopy, PrintMessage);
+            var selectedAudioFilePaths = audioSelector.SelectAudioFilesUsingConstraints(tagLibFilesByTagTier, pmpDrive, Config.pmpReservedMegabytes, Config.pmpMaxAudioFilesToCopy, PrintMessage);
 
             PrintMessage("Copying selected audio files to PMP...");
 
             // Find PMP audio directory
             var pmpAudioDirectoryPath = Path.Combine(pmpDrive.RootDirectory.FullName, Config.pmpAudioCollectionRelativePath);
 
-            audioSelector.CopyAudioFilesToPMP(selectedAudioFilePaths, pmpAudioDirectoryPath, PrintMessage);
+            audioSelector.CopyFiles(selectedAudioFilePaths, pmpAudioDirectoryPath, PrintMessage);
 
         }
 
-
-        public virtual List<TagLibCondition> BuildExampleTagLibConditions()
+        /// <summary>
+        /// An example function for creating tiers of audio selection conditions.
+        /// </summary>
+        /// <returns></returns>
+        public virtual List<TagLibTierCondition> BuildExampleTagLibTierConditions()
         {
-            var tagLibTiers = new List<TagLibCondition>();
+            var tagLibTiers = new List<TagLibTierCondition>();
 
             // Tier 1: Condition 1: Audio files that haven't been played before
             // Tier 1: Condition 2: Audio files that have been played 1 to 3 times, have a good rating, and haven't been played for 30 days
-            tagLibTiers.Add(new TagLibCondition(file =>
+            tagLibTiers.Add(new TagLibTierCondition(file =>
                 file.GetTimesPlayed() < 1 ||
                 (
                     file.GetTimesPlayed() >= 1 && file.GetTimesPlayed() <= 3 &&
@@ -266,19 +269,19 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             ));
 
             // Tier 2: Audio files with a good rating that haven't been played for 30 days
-            tagLibTiers.Add(new TagLibCondition(file =>
+            tagLibTiers.Add(new TagLibTierCondition(file =>
                 file.RatingIsGoodOrBetter() &&
                 file.GetLastPlayed().HasValue && file.DaysSinceLastPlayed() > 30
             ));
 
 
             // Tier 3: Audio files with a good rating
-            tagLibTiers.Add(new TagLibCondition(file =>
+            tagLibTiers.Add(new TagLibTierCondition(file =>
                 file.RatingIsGoodOrBetter()
             ));
 
             // Tier 4: Everything else
-            tagLibTiers.Add(new TagLibCondition(file => true));
+            tagLibTiers.Add(new TagLibTierCondition(file => true));
 
             return tagLibTiers;
         }
