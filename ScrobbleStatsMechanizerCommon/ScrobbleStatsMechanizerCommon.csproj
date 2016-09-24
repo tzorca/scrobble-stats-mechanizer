@@ -55,6 +55,7 @@
     <Compile Include="model\TagLibCondition.cs" />
     <Compile Include="model\TagLibFileLoadResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScrobbleStatsParser.cs" />
     <Compile Include="utilities\DateUtilities.cs" />
     <Compile Include="utilities\MiscExtensions.cs" />
     <Compile Include="utilities\TagLibExtensions.cs" />

@@ -180,10 +180,10 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
             }
 
             PrintMessage("Parsing scrobbler data...");
-            var scrobblerData = scrobblerTagMarker.ParseScrobblerData(Config.masterScrobblerFilePath);
+            var scrobblerData = ScrobbleStatsParser.ParseScrobblerData(Config.masterScrobblerFilePath);
 
             PrintMessage("Aggregating scrobbler data...");
-            var scrobblerStatsForFiles = scrobblerTagMarker.AggregateScrobblerData(scrobblerData);
+            var scrobblerStatsForFiles = ScrobbleStatsParser.AggregateScrobblerData(scrobblerData);
 
             PrintMessage("Matching scrobbler stats with files and updating tag stats...");
 
