@@ -19,6 +19,18 @@ namespace ScrobbleStatsMechanizerCommon
         /// <returns>True if the new value was different than the previous value</returns>
         public static bool SetCustomValue(this TagLib.File tagLibFile, TagCustomKey key, object value)
         {
+            return SetCustomValue(tagLibFile, key.ToString(), value);
+        }
+
+        /// <summary>
+        /// Returns true if the new value was different than the previous value
+        /// </summary>
+        /// <param name="tagLibFile"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns>True if the new value was different than the previous value</returns>
+        public static bool SetCustomValue(this TagLib.File tagLibFile, string key, object value)
+        {
             var previousValue = tagLibFile.GetCustomValue(key);
 
             string[] arrayVal = new string[] { value == null ? null : value.ToString() };
@@ -30,7 +42,13 @@ namespace ScrobbleStatsMechanizerCommon
 
         public static string GetCustomValue(this TagLib.File tagLibFile, TagCustomKey key)
         {
-            string[] arrayVal = tagLibFile.GetUserTextInformationFrameValue(key.ToString());
+            return tagLibFile.GetCustomValue(key.ToString());
+        }
+
+
+        public static string GetCustomValue(this TagLib.File tagLibFile, string key)
+        {
+            string[] arrayVal = tagLibFile.GetUserTextInformationFrameValue(key);
 
             if (arrayVal == null || arrayVal.Length == 0)
             {
@@ -75,12 +93,6 @@ namespace ScrobbleStatsMechanizerCommon
         {
             return (TagLib.Id3v2.Tag)tagLibFile.GetTag(TagTypes.Id3v2, true);
         }
-
-
-
-
-
-
 
 
 
