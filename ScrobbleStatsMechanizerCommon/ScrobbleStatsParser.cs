@@ -52,23 +52,12 @@ namespace ScrobbleStatsMechanizerCommon
                 DateTime lastPlayed = fileHistory.Max(s => s.GetDateTime());
                 DateTime firstPlayed = fileHistory.Min(s => s.GetDateTime());
 
-                // Calculate weighted rating
-                double weight = 50;
-                double weightedRating = 1000;
-                var fileHistoryMostRecentFirst = fileHistory.OrderBy(fh => fh.GetDateTime()).Reverse().ToList();
-                foreach (var entry in fileHistoryMostRecentFirst)
-                {
-                    if (entry.Skipped)
-                    {
-                        weightedRating += -weight;
-                    }
-                    else
-                    {
-                        weightedRating += weight * 2;
-                    }
-
-                    weight /= 1.5;
-                }
+                // Calculate weighted rating using track skip history
+                var trackSkipHistoryMostRecentFirst = fileHistory
+                    .OrderByDescending(fh => fh.GetDateTime())
+                    .Select(record => record.Skipped)
+                    .ToList();
+                var weightedRating = CalculateWeightedRating(trackSkipHistoryMostRecentFirst);
 
                 var audioFileStatInfo = new ScrobbleStatsForFile
                 (
@@ -82,7 +71,7 @@ namespace ScrobbleStatsMechanizerCommon
                     firstPlayed: firstPlayed
                 );
 
-                audioFileStatInfo.WeightedRating = ((int)weightedRating).ToString();
+                audioFileStatInfo.WeightedRating = weightedRating.ToString();
 
                 audioFileStatInfoList.Add(audioFileStatInfo);
             }
@@ -90,5 +79,25 @@ namespace ScrobbleStatsMechanizerCommon
             return audioFileStatInfoList;
         }
 
+        public static int CalculateWeightedRating(List<bool> trackSkipHistoryMostRecentFirst)
+        {
+            double weight = 50;
+            double weightedRating = 1000;
+            foreach (var trackSkipped in trackSkipHistoryMostRecentFirst)
+            {
+                if (trackSkipped)
+                {
+                    weightedRating += -weight;
+                }
+                else
+                {
+                    weightedRating += weight * 1.5;
+                }
+
+                weight /= 1.5;
+            }
+
+            return (int)weightedRating;
+        }
     }
 }
