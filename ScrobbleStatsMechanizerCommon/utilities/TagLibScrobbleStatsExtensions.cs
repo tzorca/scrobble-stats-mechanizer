@@ -29,6 +29,11 @@ namespace ScrobbleStatsMechanizerCommon
             return tagLibFile.GetTimesFinished() + tagLibFile.GetTimesSkipped();
         }
 
+        public static double GetSkipRatio(this TagLib.File tagLibFile)
+        {
+            return tagLibFile.GetTimesSkipped() / (double)tagLibFile.GetTimesPlayed();
+        }
+
         public static DateTime? GetLastPlayed(this TagLib.File tagLibFile)
         {
             return tagLibFile.GetCustomValue(TagCustomKey.LastPlayed).ReadNullableUniversalDateTime();
@@ -45,8 +50,6 @@ namespace ScrobbleStatsMechanizerCommon
 
             return DateTime.Now.Subtract(lastPlayed.Value).TotalDays;
         }
-
-        private const int NEUTRAL_RATING_THRESHOLD = 1000;
 
         /// <summary>
         /// TODO: Make this a calculated value
