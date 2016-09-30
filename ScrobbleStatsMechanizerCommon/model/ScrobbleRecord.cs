@@ -43,7 +43,7 @@ namespace ScrobbleStatsMechanizerCommon
 
         public string ArtistTitleGrouping()
         {
-            return Album + " - " + Author;
+            return Author + " - " + Title;
         }
 
         public static bool IsValidLine(string line)

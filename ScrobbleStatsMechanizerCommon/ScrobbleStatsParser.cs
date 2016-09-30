@@ -41,10 +41,10 @@ namespace ScrobbleStatsMechanizerCommon
         /// <returns>A list of scrobbler stats that are each based on a single file (Artist + Title)</returns>
         public static List<ScrobbleStatsForFile> AggregateScrobblerData(List<ScrobbleRecord> scrobblerRecords)
         {
-            var recordsByFilename = scrobblerRecords.GroupBy(sr => sr.ArtistTitleGrouping());
+            var recordsByArtistAndTitle = scrobblerRecords.GroupBy(sr => sr.ArtistTitleGrouping());
 
             var audioFileStatInfoList = new List<ScrobbleStatsForFile>();
-            foreach (var fileHistory in recordsByFilename)
+            foreach (var fileHistory in recordsByArtistAndTitle)
             {
                 uint timesStarted = (uint)fileHistory.Count();
                 uint timesSkipped = (uint)fileHistory.Where(s => s.Skipped).Count();
