@@ -15,6 +15,8 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
     {
         private Settings Config { get; set; }
 
+        private const int DAYS_IN_WEEK = 7;
+
         public void LoadSettings()
         {
             PrintMessage("Reading settings file...");
@@ -197,6 +199,14 @@ namespace ScrobbleStatsMechanizer.ExampleFrontend
                         searchResult.MatchingFiles.Count == 0)
                     {
                         // No good matches
+                        var daysSinceLastPlayed = DateTime.Now.Subtract(scrobbleStatsForFile.LastPlayed).TotalDays;
+
+                        if (daysSinceLastPlayed <= DAYS_IN_WEEK)
+                        {
+                            // If it has been played within the last week, there is probably an issue if no match was found.
+                            PrintError(String.Format("No match found for {0} (played {1} day(s) ago)",
+                                scrobbleStatsForFile.ToString(), (int)daysSinceLastPlayed));
+                        }
                         continue;
                     }
 
