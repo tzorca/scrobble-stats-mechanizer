@@ -144,19 +144,43 @@ namespace ScrobbleStatsMechanizer
         /// <returns>Percentage of match strength. Will return 0 if the match has no possibility of being valid.</returns>
         internal double GetArtistAndTitleMatchStrength(TagLib.File tagLibFile, ScrobbleStatsForFile statInfo)
         {
+            var performers = tagLibFile.Tag.Performers;
+
+            var artist = statInfo.Artist;
+
+            if (performers.Any(p => p.Contains("Two Dragons")) && artist.Contains("Two Dragons"))
+            {
+                Debug.WriteLine(string.Join("|", performers));
+                Debug.WriteLine(artist);
+
+                var c = 1;
+            }
+
+            double titleMatchStrength = 0;
             if (!tagLibFile.Tag.Title.StartsWith(statInfo.Title))
             {
                 return 0;
             }
+            else
+            {
+                titleMatchStrength = (statInfo.Title.Length / (double)tagLibFile.Tag.Title.Length);
+            }
 
+            double artistMatchStrength = 0;
             var fileTagFirstArtist = tagLibFile.Tag.Performers.First();
-            if (!fileTagFirstArtist.StartsWith(statInfo.Artist))
+            if (fileTagFirstArtist.StartsWith(statInfo.Artist))
+            {
+                artistMatchStrength = (statInfo.Artist.Length / (double)fileTagFirstArtist.Length);
+            }
+            else if (statInfo.Artist.StartsWith(fileTagFirstArtist))
+            {
+                artistMatchStrength = (fileTagFirstArtist.Length / (double)statInfo.Artist.Length);
+            }
+            else
             {
                 return 0;
             }
 
-            double titleMatchStrength = (statInfo.Title.Length / (double)tagLibFile.Tag.Title.Length);
-            double artistMatchStrength = (statInfo.Artist.Length / (double)fileTagFirstArtist.Length);
             return (titleMatchStrength + artistMatchStrength) / 2d;
         }
 
