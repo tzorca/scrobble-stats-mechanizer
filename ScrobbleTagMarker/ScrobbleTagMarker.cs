@@ -148,14 +148,6 @@ namespace ScrobbleStatsMechanizer
 
             var artist = statInfo.Artist;
 
-            if (performers.Any(p => p.Contains("Two Dragons")) && artist.Contains("Two Dragons"))
-            {
-                Debug.WriteLine(string.Join("|", performers));
-                Debug.WriteLine(artist);
-
-                var c = 1;
-            }
-
             double titleMatchStrength = 0;
             if (!tagLibFile.Tag.Title.StartsWith(statInfo.Title))
             {

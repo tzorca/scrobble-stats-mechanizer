@@ -17,12 +17,12 @@
 	// Where your local audio collection is stored.
 	"localAudioCollectionDirectoryPath": "D:/Music/",
 
-    // How many megabytes to leave free after copying audio files to the PMP.
-    "pmpReservedMegabytes": 128,
+	// How many megabytes to leave free after copying audio files to the PMP.
+	"pmpReservedMegabytes": 128,
 
-    // Where your audio collection on your PMP is stored relative to the PMP's root path.
-    "pmpAudioCollectionRelativePath": "Music/",
+	// Where your audio collection on your PMP is stored relative to the PMP's root path.
+	"pmpAudioCollectionRelativePath": "Music/",
 
-    // The maximum number of audio files to copy to the PMP in one session.
-    "pmpMaxAudioFilesToCopy": 200
+	// The maximum number of audio files to copy to the PMP in one session.
+	"pmpMaxAudioFilesToCopy": 200
 }
